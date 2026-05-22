@@ -1,6 +1,5 @@
 export const en = {
   login: {
-    title: "Open CRM",
     button: "Log in",
     error: "Login failed. Please try again.",
     developedBy: "Developed by",

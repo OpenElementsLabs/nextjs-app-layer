@@ -6,15 +6,27 @@ import { signIn, useSession } from "next-auth/react";
 import { Button } from "@open-elements/ui";
 import { useAppLayerTranslations } from "../../translations/provider";
 
-export function LoginClient({ homeRoute = "/" }: { readonly homeRoute?: string }) {
+export function LoginClient({
+  appName,
+  homeRoute = "/",
+}: {
+  readonly appName: string;
+  readonly homeRoute?: string;
+}) {
   return (
     <Suspense>
-      <LoginContent homeRoute={homeRoute} />
+      <LoginContent appName={appName} homeRoute={homeRoute} />
     </Suspense>
   );
 }
 
-function LoginContent({ homeRoute }: { readonly homeRoute: string }) {
+function LoginContent({
+  appName,
+  homeRoute,
+}: {
+  readonly appName: string;
+  readonly homeRoute: string;
+}) {
   const t = useAppLayerTranslations();
   const S = t.login;
   const router = useRouter();
@@ -43,7 +55,7 @@ function LoginContent({ homeRoute }: { readonly homeRoute: string }) {
       <div className="flex w-full flex-col items-center gap-8 bg-oe-dark px-8 py-16 text-white md:max-w-md md:rounded-2xl">
         <img src="/oe-logo-landscape-dark.svg" alt="Open Elements" className="h-12" />
 
-        <h1 className="font-heading text-3xl font-bold">{S.title}</h1>
+        <h1 className="font-heading text-3xl font-bold">{appName}</h1>
 
         {error && <p className="text-center text-sm text-oe-red">{S.error}</p>}
 

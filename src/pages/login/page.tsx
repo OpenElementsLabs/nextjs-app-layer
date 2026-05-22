@@ -1,7 +1,13 @@
 import { LoginClient } from "./login-client";
 
-export function createLoginPage({ homeRoute }: { readonly homeRoute?: string } = {}) {
+export function createLoginPage({
+  appName,
+  homeRoute,
+}: {
+  readonly appName: string;
+  readonly homeRoute?: string;
+}) {
   return function LoginPage() {
-    return <LoginClient homeRoute={homeRoute} />;
+    return <LoginClient appName={appName} homeRoute={homeRoute} />;
   };
 }
