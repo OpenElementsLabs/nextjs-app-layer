@@ -171,37 +171,62 @@ following are not supported today and will be addressed in future versions:
 - Page-level customization (sub-component exports, slot props).
 - Per-string translation overrides.
 
-## Releasing a New Version
-
-Every release must be published to npm **and** have a corresponding Git tag
-and GitHub Release.
-
-### Usage
-
-```bash
-./release.sh <release-version> <next-version>
-```
-
-Example:
-
-```bash
-./release.sh 0.2.0 0.3.0
-```
-
-The script performs the following steps:
-
-1. Sets the release version in `package.json`
-2. Builds, type-checks, lints, formats, and tests the project
-3. Commits, tags (`v<version>`), and pushes to GitHub
-4. Publishes the package to npm
-5. Creates a GitHub Release with auto-generated notes
-6. Sets the next development version in `package.json`, commits, and pushes
+## Development
 
 ### Prerequisites
 
-- You must be logged in to npm with publish access to the `@open-elements`
-  scope (`pnpm login`).
-- The [GitHub CLI (`gh`)](https://cli.github.com/) must be installed and
-  authenticated.
-- The `NPM_TOKEN` and `GH_TOKEN` environment variables must be set
-  (in a `.env` file).
+- **Node.js ≥ 22** — the exact version is pinned in [`.nvmrc`](.nvmrc) (Node 24).
+  With [nvm](https://github.com/nvm-sh/nvm), run `nvm install && nvm use` in the
+  project root to match it.
+- **pnpm** — pinned via the `packageManager` field in `package.json`. Enable it
+  through [Corepack](https://nodejs.org/api/corepack.html) (bundled with Node):
+  `corepack enable`. The correct pnpm version is then selected automatically.
+
+### Setup
+
+```bash
+pnpm install
+```
+
+### Build
+
+```bash
+pnpm run build      # compile TypeScript to dist/ (tsc -p tsconfig.build.json)
+```
+
+### Quality checks
+
+```bash
+pnpm run typecheck      # type-check without emitting
+pnpm run lint           # ESLint over src/
+pnpm run format:check   # Prettier check (use `pnpm run format` to auto-fix)
+pnpm run test           # Vitest (use `pnpm run test:watch` while developing)
+```
+
+These are the same checks the release workflow runs in CI before publishing.
+
+## Releasing a New Version
+
+Releases run through the tag-triggered GitHub Actions workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) — there is no
+local publishing step.
+
+### Steps
+
+1. Bump `version` in `package.json` and commit.
+2. Tag the commit `vX.Y.Z` (the tag must match `package.json`) and push the tag.
+3. CI verifies the tag, builds, type-checks, lints, formats, and tests, then
+   **stages** the package to npm via OIDC (trusted publishing — no token). The
+   version is uploaded to a staging queue and does **not** go live yet.
+4. Approve the staged release with 2FA — on [npmjs.com](https://www.npmjs.com/),
+   or via the CLI: `pnpm stage list` to find the id, then
+   `pnpm stage approve <stage-id>` (`pnpm stage reject <stage-id>` discards it).
+5. Publish the draft GitHub Release that the workflow created.
+
+### One-time prerequisites
+
+- A **Trusted Publisher** is configured for the package on npmjs.com (repository
+  `OpenElementsLabs/nextjs-app-layer`, workflow `release.yml`, allowed action
+  `pnpm stage publish`).
+- No `NPM_TOKEN` is required — authentication uses OIDC, and provenance
+  attestations are generated automatically.

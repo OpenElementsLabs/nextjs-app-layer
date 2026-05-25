@@ -2,6 +2,10 @@
   "name": "@open-elements/nextjs-app-layer",
   "version": "0.4.0",
   "description": "Next.js foundation (auth, proxy, admin pages, login/forbidden, layout) for Open Elements applications",
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "node": ">=22"
+  },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
