@@ -175,6 +175,7 @@ export function AuditLogsClient() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t.auditLog.columns.entityType}</TableHead>
+                  <TableHead>{t.auditLog.columns.name}</TableHead>
                   <TableHead>{t.auditLog.columns.entityId}</TableHead>
                   <TableHead>{t.auditLog.columns.action}</TableHead>
                   <TableHead>{t.auditLog.columns.user}</TableHead>
@@ -185,6 +186,7 @@ export function AuditLogsClient() {
                 {data.content.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium text-oe-dark">{entry.entityType}</TableCell>
+                    <TableCell className="text-oe-dark">{entry.name || "—"}</TableCell>
                     <TableCell className="font-mono text-xs text-oe-gray">
                       {entry.entityId}
                     </TableCell>

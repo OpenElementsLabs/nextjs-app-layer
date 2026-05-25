@@ -159,6 +159,7 @@ export const de = {
     },
     columns: {
       entityType: "Typ",
+      name: "Name",
       entityId: "Entity-ID",
       action: "Aktion",
       user: "Benutzer",

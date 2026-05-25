@@ -23,6 +23,7 @@ export interface AuditLogDto {
   readonly id: string;
   readonly entityType: string;
   readonly entityId: string;
+  readonly name: string;
   readonly action: AuditAction;
   readonly user: UserDto;
   readonly createdAt: string;

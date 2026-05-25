@@ -158,6 +158,7 @@ export const en = {
     },
     columns: {
       entityType: "Type",
+      name: "Name",
       entityId: "Entity ID",
       action: "Action",
       user: "User",
