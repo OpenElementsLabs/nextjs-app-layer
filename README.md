@@ -25,7 +25,7 @@ pnpm add @open-elements/ui next next-auth react react-dom lucide-react
 
 ### `@open-elements/nextjs-app-layer` (client-safe)
 
-- `ROLE_ADMIN`, `ROLE_IT_ADMIN`, `hasRole(session, role)`
+- `ROLE_APP_ADMIN`, `ROLE_APP_USER`, `ROLE_IT_ADMIN`, `hasRole(session, role)`
 - `ForbiddenError`
 - DTO types: `Page<T>`, `UserDto`, `AuditAction`, `AuditLogDto`,
   `ApiKeyDto`, `ApiKeyCreateDto`, `ApiKeyCreatedDto`, `WebhookDto`,
@@ -153,7 +153,7 @@ The same 2-line shape applies to every other admin page.
 
 ## OE conventions this lib assumes
 
-- OIDC role names: `IT-ADMIN` and `ADMIN` (hardcoded).
+- OIDC role names: `APP-ADMIN`, `APP-USER`, and `IT-ADMIN` (hardcoded).
 - Proxy pattern: every backend call goes through `/api/...` in the same
   origin as the Next.js app.
 - Fonts: Montserrat (heading), Lato (body).
