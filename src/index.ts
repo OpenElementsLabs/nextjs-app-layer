@@ -31,6 +31,10 @@ export { usersPageMeta } from "./pages/admin/users/meta";
 
 export { createServerStatusPage } from "./pages/admin/status/page";
 export { ServerStatusClient } from "./pages/admin/status/server-status-client";
+export type {
+  StatusCapabilitiesConfig,
+  StatusCapabilityItem,
+} from "./pages/admin/status/server-status-client";
 export { serverStatusPageMeta } from "./pages/admin/status/meta";
 
 export { createBearerTokenPage } from "./pages/admin/token/page";
