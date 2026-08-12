@@ -46,7 +46,7 @@ pnpm add @open-elements/ui next next-auth react react-dom lucide-react
 
 ### `@open-elements/nextjs-app-layer/server` (server-only)
 
-- `createAppLayerAuth({ issuer, clientId, clientSecret })`
+- `createAppLayerAuth({ issuer, clientId, clientSecret, ...tuning })`
 - `createBackendProxyHandler({ backendUrl, auth })`
 - `createLogoutHandler({ auth, oidcIssuer, authUrl })`
 - `middlewareConfig` (reference value — see warning below)
@@ -82,6 +82,38 @@ export const { handlers, auth, signIn, signOut, oidcIssuer } =
     clientId: process.env.OIDC_CLIENT_ID,
     clientSecret: process.env.OIDC_CLIENT_SECRET,
   });
+```
+
+### Session and token-refresh tuning
+
+All four options are optional and can also be set per deployment via an env var.
+Precedence is: explicit config value > env var > default. Non-numeric or
+non-positive values fall back to the default.
+
+| Option                     | Env var                           | Default | Meaning                                                                    |
+| -------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------- |
+| `sessionMaxAgeSeconds`     | `AUTH_SESSION_MAX_AGE_SECONDS`    | `28800` | Session/JWT lifetime (8 h)                                                 |
+| `sessionUpdateAgeSeconds`  | `AUTH_SESSION_UPDATE_AGE_SECONDS` | `900`   | How often the rolling session cookie is re-issued                          |
+| `refreshSkewSeconds`       | `AUTH_TOKEN_REFRESH_SKEW_SECONDS` | `300`   | Refresh this long before access-token expiry, clamped to half its lifetime |
+| `oidcTimeoutMs`            | `OIDC_HTTP_TIMEOUT_MS`            | `10000` | Timeout for OIDC discovery and token-endpoint calls                        |
+
+The refresh skew is clamped to `max(5, min(skew, floor(tokenLifetime / 2)))`, so
+an IdP that issues short-lived access tokens (≤ 60 s) is contacted at most once
+per half-lifetime instead of on every request. Concurrent refreshes of the same
+refresh token share a single token-endpoint call, and OIDC discovery is cached
+for 10 minutes.
+
+A transient refresh failure (5xx, network error, timeout) keeps the existing
+token and is retried on the next request; only a 4xx from the token endpoint —
+or a transient failure after the access token has already expired — marks the
+session with `error: "RefreshTokenError"`, which makes the middleware treat the
+request as unauthenticated.
+
+If your access tokens live for less than two minutes, lower the client-side
+session poll accordingly:
+
+```tsx
+<SessionProvider refetchInterval={30}>{children}</SessionProvider>
 ```
 
 ```ts
