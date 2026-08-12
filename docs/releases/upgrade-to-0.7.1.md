@@ -1,20 +1,20 @@
-# Upgrade prompt: `@open-elements/nextjs-app-layer` 0.7.x → 0.8.0
+# Upgrade prompt: `@open-elements/nextjs-app-layer` 0.7.0 → 0.7.1
 
 ## Prompt
 
-You are upgrading a Next.js app that depends on `@open-elements/nextjs-app-layer` from 0.7.x to 0.8.0. This release is **additive and backward compatible** — no public API changed — but it **changes runtime behaviour**: sessions now expire after 8 hours instead of 30 days, and the OIDC access-token refresh is rate-limited, de-duplicated, and no longer fails the session on a transient IdP error. Bump the dependency, then decide whether any of the new tuning options apply to your deployment. Do not change anything outside this scope.
+You are upgrading a Next.js app that depends on `@open-elements/nextjs-app-layer` from 0.7.0 to 0.7.1. This release is **additive and backward compatible** — no public API changed — but it **changes runtime behaviour**: sessions now expire after 8 hours instead of 30 days, and the OIDC access-token refresh is rate-limited, de-duplicated, and no longer fails the session on a transient IdP error. Bump the dependency, then decide whether any of the new tuning options apply to your deployment. Do not change anything outside this scope.
 
-### What changed in 0.8.0
+### What changed in 0.7.1
 
 #### Dependencies
 
-Bump only `@open-elements/nextjs-app-layer` to `0.8.0`. No peer dependencies changed: `next`, `next-auth`, `react`, `react-dom`, `lucide-react`, and `@open-elements/ui` stay at whatever versions the consumer already uses. Do **not** change those coordinates as part of this upgrade.
+Bump only `@open-elements/nextjs-app-layer` to `0.7.1`. No peer dependencies changed: `next`, `next-auth`, `react`, `react-dom`, `lucide-react`, and `@open-elements/ui` stay at whatever versions the consumer already uses. Do **not** change those coordinates as part of this upgrade.
 
 #### Behavioural: the session no longer outlives the access token
 
-0.7.x used `session: { strategy: "jwt" }` with no `maxAge`, so the session cookie inherited the Auth.js default of **30 days**. The cookie therefore survived weeks after the OIDC access token — and its refresh token — had died: the middleware reported "authenticated" while every proxied API call returned 401.
+0.7.0 used `session: { strategy: "jwt" }` with no `maxAge`, so the session cookie inherited the Auth.js default of **30 days**. The cookie therefore survived weeks after the OIDC access token — and its refresh token — had died: the middleware reported "authenticated" while every proxied API call returned 401.
 
-0.8.0 sets a session and JWT `maxAge` of **8 hours** with a rolling `updateAge` of **15 minutes**. Users of an app that relied on the 30-day cookie will now be redirected to the IdP once per working day (usually a silent SSO round-trip). If you deliberately need a longer session, set it explicitly — do not go back to the default:
+0.7.1 sets a session and JWT `maxAge` of **8 hours** with a rolling `updateAge` of **15 minutes**. Users of an app that relied on the 30-day cookie will now be redirected to the IdP once per working day (usually a silent SSO round-trip). If you deliberately need a longer session, set it explicitly — do not go back to the default:
 
 ```ts
 createAppLayerAuth({
@@ -27,9 +27,9 @@ createAppLayerAuth({
 
 #### Behavioural: refresh is clamped, de-duplicated, and fails soft
 
-0.7.x refreshed when the access token was within a hard-coded **60 seconds** of expiry. Against an IdP that issues access tokens with a lifetime of 60 seconds or less (a common Authentik default), that window opened the moment the token was minted, so every RSC render, every client session poll, and every proxied API call POSTed to the token endpoint.
+0.7.0 refreshed when the access token was within a hard-coded **60 seconds** of expiry. Against an IdP that issues access tokens with a lifetime of 60 seconds or less (a common Authentik default), that window opened the moment the token was minted, so every RSC render, every client session poll, and every proxied API call POSTed to the token endpoint.
 
-In 0.8.0 the skew is clamped to the observed token lifetime:
+In 0.7.1 the skew is clamped to the observed token lifetime:
 
 ```
 effectiveSkew = max(5, min(configuredSkew, floor(tokenLifetime / 2)))
@@ -67,11 +67,11 @@ The client session poll was hard-coded to 120 seconds. It is now a prop with the
 <SessionProvider refetchInterval={30}>{children}</SessionProvider>
 ```
 
-`refetchOnWindowFocus` stays enabled. Omitting the prop reproduces 0.7.x behaviour exactly.
+`refetchOnWindowFocus` stays enabled. Omitting the prop reproduces 0.7.0 behaviour exactly.
 
 ### Steps
 
-1. Bump `@open-elements/nextjs-app-layer` to `0.8.0` in `package.json`; leave all other dependencies untouched. Reinstall (`pnpm install`).
+1. Bump `@open-elements/nextjs-app-layer` to `0.7.1` in `package.json`; leave all other dependencies untouched. Reinstall (`pnpm install`).
 2. Check the access-token lifetime your IdP issues for this app's client. If it is under two minutes, pass `refetchInterval` to `SessionProvider` (roughly half the lifetime, minimum ~15 s) so the browser notices an expired session promptly.
 3. Decide whether the 8-hour session fits the app. If it does, do nothing. If not, set `sessionMaxAgeSeconds` (or `AUTH_SESSION_MAX_AGE_SECONDS` in the deployment) explicitly.
 4. If the app previously worked around the refresh bug — e.g. a custom `jwt` callback, a manual refresh route, a polling hack, or a shortened `refetchInterval` added to fight repeated 401s — remove that workaround; the library handles it now.
