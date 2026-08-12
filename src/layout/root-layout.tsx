@@ -33,17 +33,20 @@ export function OERootLayout({
   translations,
   apiClient,
   htmlLang = "en",
+  sessionRefetchInterval,
 }: {
   readonly children: React.ReactNode;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly translations: Record<Language, any>;
   readonly apiClient?: AppLayerApiClient;
   readonly htmlLang?: string;
+  /** Session poll interval in seconds. Lower it for short-lived access tokens. */
+  readonly sessionRefetchInterval?: number;
 }) {
   return (
     <html lang={htmlLang} className={`${montserrat.variable} ${lato.variable}`}>
       <body className="antialiased">
-        <SessionProvider>
+        <SessionProvider refetchInterval={sessionRefetchInterval}>
           <LanguageProvider translations={translations}>
             <AppLayerTranslationProvider>
               <ApiClientProvider client={apiClient}>{children}</ApiClientProvider>

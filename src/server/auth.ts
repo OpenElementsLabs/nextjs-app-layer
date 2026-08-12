@@ -1,9 +1,42 @@
 import NextAuth from "next-auth";
+import {
+  DEFAULT_OIDC_TIMEOUT_MS,
+  DEFAULT_REFRESH_SKEW_SECONDS,
+  DEFAULT_SESSION_MAX_AGE_SECONDS,
+  DEFAULT_SESSION_UPDATE_AGE_SECONDS,
+  REFRESH_TOKEN_ERROR,
+  applyTokenState,
+  ensureFreshTokens,
+  isAuthorized,
+  resolvePositiveNumber,
+  toTokenState,
+} from "./oidc-tokens";
 
 export interface AppLayerAuthConfig {
   readonly issuer: string | undefined;
   readonly clientId: string | undefined;
   readonly clientSecret: string | undefined;
+  /**
+   * Session lifetime in seconds. Env: `AUTH_SESSION_MAX_AGE_SECONDS`.
+   * Default: 8 hours.
+   */
+  readonly sessionMaxAgeSeconds?: number;
+  /**
+   * How often the rolling session cookie is re-issued, in seconds.
+   * Env: `AUTH_SESSION_UPDATE_AGE_SECONDS`. Default: 15 minutes.
+   */
+  readonly sessionUpdateAgeSeconds?: number;
+  /**
+   * Refresh the access token this many seconds before it expires, clamped to half
+   * the observed token lifetime. Env: `AUTH_TOKEN_REFRESH_SKEW_SECONDS`.
+   * Default: 5 minutes.
+   */
+  readonly refreshSkewSeconds?: number;
+  /**
+   * Timeout for OIDC discovery and token-endpoint calls, in milliseconds.
+   * Env: `OIDC_HTTP_TIMEOUT_MS`. Default: 10000.
+   */
+  readonly oidcTimeoutMs?: number;
 }
 
 /**
@@ -18,6 +51,27 @@ export function createAppLayerAuth(
 ): ReturnType<typeof NextAuth> & { oidcIssuer: string | undefined } {
   const { issuer: oidcIssuer, clientId, clientSecret } = config;
 
+  const sessionMaxAge = resolvePositiveNumber(
+    config.sessionMaxAgeSeconds,
+    "AUTH_SESSION_MAX_AGE_SECONDS",
+    DEFAULT_SESSION_MAX_AGE_SECONDS,
+  );
+  const sessionUpdateAge = resolvePositiveNumber(
+    config.sessionUpdateAgeSeconds,
+    "AUTH_SESSION_UPDATE_AGE_SECONDS",
+    DEFAULT_SESSION_UPDATE_AGE_SECONDS,
+  );
+  const refreshSkewSeconds = resolvePositiveNumber(
+    config.refreshSkewSeconds,
+    "AUTH_TOKEN_REFRESH_SKEW_SECONDS",
+    DEFAULT_REFRESH_SKEW_SECONDS,
+  );
+  const oidcTimeoutMs = resolvePositiveNumber(
+    config.oidcTimeoutMs,
+    "OIDC_HTTP_TIMEOUT_MS",
+    DEFAULT_OIDC_TIMEOUT_MS,
+  );
+
   const nextAuth = NextAuth({
     providers: [
       {
@@ -31,10 +85,11 @@ export function createAppLayerAuth(
       },
     ],
     pages: { signIn: "/login" },
-    session: { strategy: "jwt" },
+    session: { strategy: "jwt", maxAge: sessionMaxAge, updateAge: sessionUpdateAge },
+    jwt: { maxAge: sessionMaxAge },
     callbacks: {
       authorized({ auth: session }) {
-        return !!session?.user;
+        return isAuthorized(session);
       },
       async signIn() {
         return true;
@@ -47,6 +102,11 @@ export function createAppLayerAuth(
           t.refreshToken = account.refresh_token;
           t.idToken = account.id_token;
           t.expiresAt = account.expires_at;
+          t.tokenLifetime =
+            typeof account.expires_at === "number"
+              ? Math.max(0, account.expires_at - Math.floor(Date.now() / 1000))
+              : undefined;
+          t.error = undefined;
           if (profile) {
             t.name = profile.name;
             t.email = profile.email;
@@ -57,44 +117,14 @@ export function createAppLayerAuth(
           return token;
         }
 
-        if (typeof t.expiresAt === "number" && Date.now() < (t.expiresAt - 60) * 1000) {
-          return token;
-        }
-
-        if (typeof t.refreshToken === "string") {
-          try {
-            const wellKnownResponse = await fetch(`${oidcIssuer}/.well-known/openid-configuration`);
-            const wellKnown = await wellKnownResponse.json();
-            const tokenEndpoint = wellKnown.token_endpoint;
-
-            const response = await fetch(tokenEndpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/x-www-form-urlencoded" },
-              body: new URLSearchParams({
-                grant_type: "refresh_token",
-                client_id: clientId!,
-                client_secret: clientSecret!,
-                refresh_token: t.refreshToken as string,
-              }),
-            });
-
-            const refreshed = await response.json();
-
-            if (!response.ok) {
-              throw new Error("Token refresh failed");
-            }
-
-            t.accessToken = refreshed.access_token;
-            t.refreshToken = refreshed.refresh_token ?? t.refreshToken;
-            t.expiresAt = Math.floor(Date.now() / 1000 + refreshed.expires_in);
-            t.error = undefined;
-            return token;
-          } catch (error) {
-            console.error("Token refresh failed:", error);
-            t.error = "RefreshTokenError";
-            return token;
-          }
-        }
+        const refreshed = await ensureFreshTokens(toTokenState(t), {
+          issuer: oidcIssuer,
+          clientId,
+          clientSecret,
+          refreshSkewSeconds,
+          timeoutMs: oidcTimeoutMs,
+        });
+        applyTokenState(t, refreshed);
 
         return token;
       },
@@ -105,7 +135,7 @@ export function createAppLayerAuth(
         session.expiresAt = t.expiresAt as number | undefined;
         session.roles = Array.isArray(t.roles) ? (t.roles as string[]) : [];
         session.error = typeof t.error === "string" ? t.error : undefined;
-        if (t.error === "RefreshTokenError") {
+        if (t.error === REFRESH_TOKEN_ERROR) {
           session.accessToken = undefined;
         }
         if (typeof t.name === "string") session.user.name = t.name;

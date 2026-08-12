@@ -1,6 +1,6 @@
 {
   "name": "@open-elements/nextjs-app-layer",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Next.js foundation (auth, proxy, admin pages, login/forbidden, layout) for Open Elements applications",
   "packageManager": "pnpm@11.3.0",
   "engines": {

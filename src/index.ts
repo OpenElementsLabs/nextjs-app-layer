@@ -13,6 +13,7 @@ export {
 export type { AppLayerTranslations } from "./translations/provider";
 
 export { SessionProvider } from "./components/session-provider";
+export type { SessionProviderProps } from "./components/session-provider";
 export { ForbiddenPage } from "./components/forbidden-page";
 export { BearerTokenCard } from "./components/bearer-token-card";
 export { AddCommentDialog } from "./components/add-comment-dialog";
