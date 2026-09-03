@@ -47,7 +47,7 @@ pnpm add @open-elements/ui next next-auth react react-dom lucide-react
 ### `@open-elements/nextjs-app-layer/server` (server-only)
 
 - `createAppLayerAuth({ issuer, clientId, clientSecret, ...tuning })`
-- `createBackendProxyHandler({ backendUrl, auth })`
+- `createBackendProxyHandler({ backendUrl, auth, forwardRequestHeaders? })`
 - `createLogoutHandler({ auth, oidcIssuer, authUrl })`
 - `middlewareConfig` (reference value — see warning below)
 
@@ -126,6 +126,28 @@ const handler = createBackendProxyHandler({
   auth,
 });
 export { handler as GET, handler as POST, handler as PUT, handler as DELETE };
+```
+
+The proxy **streams** the request body to the backend (`duplex: "half"`), so
+arbitrarily large uploads pass through with constant memory use instead of being
+buffered on the heap.
+
+It always forwards `Content-Type`, `Accept`, and the range / conditional headers
+`Range`, `If-Range`, `If-Match`, `If-None-Match`, `If-Modified-Since`, and
+`If-Unmodified-Since`, so browser media seeking (`206 Partial Content`) and
+conditional caching work out of the box.
+
+To forward extra application headers (e.g. idempotency keys or checksums), pass
+`forwardRequestHeaders`. Matching is case-insensitive. Security-sensitive headers
+are always excluded even if listed: `Cookie`, `Host`, `Authorization` (the proxy
+sets its own bearer token), `Content-Length`, and `Connection`.
+
+```ts
+const handler = createBackendProxyHandler({
+  backendUrl: process.env.BACKEND_URL ?? "http://localhost:8080",
+  auth,
+  forwardRequestHeaders: ["Idempotency-Key", "X-Checksum-Sha256"],
+});
 ```
 
 ```ts

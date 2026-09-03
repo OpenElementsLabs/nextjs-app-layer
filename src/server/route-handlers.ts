@@ -11,19 +11,71 @@ type RouteHandler = (
 export interface BackendProxyConfig {
   readonly backendUrl: string;
   readonly auth: AuthFn;
+  /**
+   * Additional request headers to forward to the backend, matched
+   * case-insensitively (e.g. `["Idempotency-Key", "X-Checksum-Sha256"]`).
+   *
+   * Security-sensitive headers are always excluded regardless of this
+   * list: `Cookie`, `Host`, `Authorization` (the proxy sets its own
+   * bearer token), and the hop-by-hop / fetch-managed headers
+   * `Content-Length` and `Connection`.
+   */
+  readonly forwardRequestHeaders?: readonly string[];
 }
+
+/**
+ * Request headers that are always forwarded to the backend. In addition to
+ * `Content-Type` and `Accept` these include the conditional / range headers
+ * that browsers rely on for media seeking and caching.
+ */
+const ALWAYS_FORWARDED_HEADERS = [
+  "content-type",
+  "accept",
+  "range",
+  "if-range",
+  "if-none-match",
+  "if-match",
+  "if-modified-since",
+  "if-unmodified-since",
+] as const;
+
+/**
+ * Headers that must never be forwarded to the backend, even when listed in
+ * `forwardRequestHeaders`. `Cookie` and `Host` would leak session state and
+ * confuse virtual-host routing; `Authorization` is set by the proxy itself;
+ * `Content-Length` and `Connection` are hop-by-hop / managed by `fetch`.
+ */
+const NEVER_FORWARDED_HEADERS = new Set([
+  "cookie",
+  "host",
+  "authorization",
+  "content-length",
+  "connection",
+]);
 
 /**
  * Create a route handler that proxies an authenticated request to the
  * upstream backend, attaching `Authorization: Bearer <accessToken>` from
- * the session cookie and forwarding query params / body / Content-Type /
- * Accept headers.
+ * the session cookie and forwarding query params, the (streamed) request
+ * body, and a curated set of request headers.
+ *
+ * The body is streamed rather than buffered, so arbitrarily large uploads
+ * pass through with constant memory use. Range and conditional headers are
+ * forwarded so that media seeking (`206 Partial Content`) and caching work.
+ * Extra application headers can be allow-listed via `forwardRequestHeaders`.
  *
  * Mount as `export { handler as GET, handler as POST, handler as PUT, handler as DELETE }`
  * in `frontend/src/app/api/[...path]/route.ts`.
  */
 export function createBackendProxyHandler(config: BackendProxyConfig): RouteHandler {
-  const { backendUrl, auth } = config;
+  const { backendUrl, auth, forwardRequestHeaders = [] } = config;
+  const extraForwarded = new Set(
+    forwardRequestHeaders
+      .map((name) => name.toLowerCase())
+      .filter((name) => !NEVER_FORWARDED_HEADERS.has(name)),
+  );
+  const forwarded = new Set<string>([...ALWAYS_FORWARDED_HEADERS, ...extraForwarded]);
+
   return async function handler(req, { params }) {
     const session = await auth();
     const { path } = await params;
@@ -36,21 +88,28 @@ export function createBackendProxyHandler(config: BackendProxyConfig): RouteHand
     });
 
     const headers = new Headers();
-    const contentType = req.headers.get("Content-Type");
-    if (contentType) headers.set("Content-Type", contentType);
-    const accept = req.headers.get("Accept");
-    if (accept) headers.set("Accept", accept);
+    req.headers.forEach((value, key) => {
+      if (forwarded.has(key.toLowerCase())) headers.set(key, value);
+    });
     if (session?.accessToken) {
       headers.set("Authorization", `Bearer ${session.accessToken}`);
     }
 
     const hasBody = req.method !== "GET" && req.method !== "HEAD";
 
-    const response = await fetch(url.toString(), {
+    // Stream the body instead of buffering it into memory. `duplex: "half"`
+    // is required by undici (Node's fetch) whenever a ReadableStream body is
+    // sent; it is not yet in the DOM `RequestInit` type, hence the cast.
+    const init: RequestInit & { duplex?: "half" } = {
       method: req.method,
       headers,
-      body: hasBody ? await req.arrayBuffer() : undefined,
-    });
+    };
+    if (hasBody && req.body) {
+      init.body = req.body;
+      init.duplex = "half";
+    }
+
+    const response = await fetch(url.toString(), init);
 
     return new Response(response.body, {
       status: response.status,
