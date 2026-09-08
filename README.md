@@ -47,7 +47,7 @@ pnpm add @open-elements/ui next next-auth react react-dom lucide-react
 ### `@open-elements/nextjs-app-layer/server` (server-only)
 
 - `createAppLayerAuth({ issuer, clientId, clientSecret, ...tuning })`
-- `createBackendProxyHandler({ backendUrl, auth })`
+- `createBackendProxyHandler({ backendUrl, auth, forwardRequestHeaders? })`
 - `createLogoutHandler({ auth, oidcIssuer, authUrl })`
 - `middlewareConfig` (reference value — see warning below)
 
@@ -126,6 +126,46 @@ const handler = createBackendProxyHandler({
   auth,
 });
 export { handler as GET, handler as POST, handler as PUT, handler as DELETE };
+```
+
+The proxy **streams** the request body to the backend (`duplex: "half"`), so
+arbitrarily large uploads pass through with constant memory use instead of being
+buffered on the heap.
+
+It always forwards `Content-Type`, `Content-Length`, `Accept`, and the range /
+conditional headers `Range`, `If-Range`, `If-Match`, `If-None-Match`,
+`If-Modified-Since`, and `If-Unmodified-Since`, so browser media seeking
+(`206 Partial Content`) and conditional caching work out of the box.
+
+`Content-Length` is forwarded because the body is streamed: without it the
+upstream request is framed as `Transfer-Encoding: chunked`, and a backend asking
+for the declared length (e.g. Servlet `getContentLengthLong()`) gets `-1`.
+Backends use that value to reject an over-sized upload *before* reading the
+body, so dropping it would turn a cheap rejection into a full transfer.
+
+On the way back, headers that `fetch` invalidated are corrected rather than
+relayed blindly: Node's `fetch` decompresses a `Content-Encoding` response
+transparently but leaves the encoding and length describing the compressed
+bytes, so both are dropped when the upstream response was encoded (an
+uncompressed `206` keeps its `Content-Length`). Hop-by-hop headers
+(`Connection`, `Keep-Alive`, `Transfer-Encoding`, …) are never relayed.
+
+The upstream request uses `redirect: "manual"`, because a streamed body is
+single-use and cannot be replayed for a `307`/`308`; the `3xx` and its
+`Location` are relayed to the client instead. The client's `AbortSignal` is
+passed through, so cancelling an upload also aborts the upstream request.
+
+To forward extra application headers (e.g. idempotency keys or checksums), pass
+`forwardRequestHeaders`. Matching is case-insensitive. Security-sensitive headers
+are always excluded even if listed: `Cookie`, `Host`, `Authorization` (the proxy
+sets its own bearer token), and `Connection`.
+
+```ts
+const handler = createBackendProxyHandler({
+  backendUrl: process.env.BACKEND_URL ?? "http://localhost:8080",
+  auth,
+  forwardRequestHeaders: ["Idempotency-Key", "X-Checksum-Sha256"],
+});
 ```
 
 ```ts
