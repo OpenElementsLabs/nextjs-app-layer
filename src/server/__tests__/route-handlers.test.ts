@@ -212,4 +212,139 @@ describe("createBackendProxyHandler", () => {
     const headers = (fetchMock.mock.calls[0][1]! as RequestInit).headers as Headers;
     expect(headers.get("Authorization")).toBe("Bearer real-token");
   });
+  it("should forward Content-Length so the backend can reject over-sized uploads early", async () => {
+    const fetchMock = mockFetch(new Response(null, { status: 201 }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    await handler(
+      makeRequest("http://app.test/api/upload", {
+        method: "PUT",
+        headers: { "Content-Type": "audio/webm", "Content-Length": "7" },
+        body: "payload",
+      }),
+      context(["upload"]),
+    );
+
+    const headers = (fetchMock.mock.calls[0][1]! as RequestInit).headers as Headers;
+    // Without this the streamed request is framed as chunked and a backend
+    // asking for the declared length sees -1, disabling its fast rejection.
+    expect(headers.get("Content-Length")).toBe("7");
+  });
+
+  it("should relay a 3xx instead of following it, because a streamed body cannot be replayed", async () => {
+    const fetchMock = mockFetch(
+      new Response(null, { status: 307, headers: { Location: "/api/elsewhere" } }),
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    const res = await handler(
+      makeRequest("http://app.test/api/upload", { method: "POST", body: "payload" }),
+      context(["upload"]),
+    );
+
+    const init = fetchMock.mock.calls[0][1]! as RequestInit;
+    expect(init.redirect).toBe("manual");
+    expect(res.status).toBe(307);
+    expect(res.headers.get("Location")).toBe("/api/elsewhere");
+  });
+
+  it("should pass the request abort signal to the upstream fetch", async () => {
+    const fetchMock = mockFetch(new Response(null, { status: 200 }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    const req = makeRequest("http://app.test/api/upload", { method: "POST", body: "payload" });
+    await handler(req, context(["upload"]));
+
+    const init = fetchMock.mock.calls[0][1]! as RequestInit;
+    expect(init.signal).toBe(req.signal);
+  });
+
+  it("should drop Content-Encoding and Content-Length when fetch decoded the response body", async () => {
+    // `fetch` decompresses transparently but leaves both headers describing the
+    // encoded bytes; relaying them yields ERR_CONTENT_DECODING_FAILED.
+    const fetchMock = mockFetch(
+      new Response("decoded-json", {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Encoding": "gzip",
+          "Content-Length": "49",
+          ETag: '"v1"',
+        },
+      }),
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    const res = await handler(makeRequest("http://app.test/api/me"), context(["me"]));
+
+    expect(res.headers.get("Content-Encoding")).toBeNull();
+    expect(res.headers.get("Content-Length")).toBeNull();
+    // Headers describing the resource itself survive.
+    expect(res.headers.get("Content-Type")).toBe("application/json");
+    expect(res.headers.get("ETag")).toBe('"v1"');
+    expect(await res.text()).toBe("decoded-json");
+  });
+
+  it("should keep Content-Length on an uncompressed ranged response", async () => {
+    const fetchMock = mockFetch(
+      new Response("chunk", {
+        status: 206,
+        headers: {
+          "Content-Length": "5",
+          "Content-Range": "bytes 0-4/100",
+          "Accept-Ranges": "bytes",
+        },
+      }),
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    const res = await handler(
+      makeRequest("http://app.test/api/audio.mp3", { headers: { Range: "bytes=0-4" } }),
+      context(["audio.mp3"]),
+    );
+
+    expect(res.status).toBe(206);
+    expect(res.headers.get("Content-Length")).toBe("5");
+    expect(res.headers.get("Content-Range")).toBe("bytes 0-4/100");
+    expect(res.headers.get("Accept-Ranges")).toBe("bytes");
+  });
+
+  it("should not relay hop-by-hop response headers", async () => {
+    const fetchMock = mockFetch(
+      new Response("body", {
+        status: 200,
+        headers: { Connection: "keep-alive", "Keep-Alive": "timeout=5" },
+      }),
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const handler = createBackendProxyHandler({
+      backendUrl: BACKEND_URL,
+      auth: async () => null,
+    });
+    const res = await handler(makeRequest("http://app.test/api/me"), context(["me"]));
+
+    expect(res.headers.get("Connection")).toBeNull();
+    expect(res.headers.get("Keep-Alive")).toBeNull();
+  });
 });

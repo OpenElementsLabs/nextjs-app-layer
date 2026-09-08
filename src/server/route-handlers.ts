@@ -17,19 +17,27 @@ export interface BackendProxyConfig {
    *
    * Security-sensitive headers are always excluded regardless of this
    * list: `Cookie`, `Host`, `Authorization` (the proxy sets its own
-   * bearer token), and the hop-by-hop / fetch-managed headers
-   * `Content-Length` and `Connection`.
+   * bearer token) and the hop-by-hop header `Connection`.
    */
   readonly forwardRequestHeaders?: readonly string[];
 }
 
 /**
- * Request headers that are always forwarded to the backend. In addition to
- * `Content-Type` and `Accept` these include the conditional / range headers
- * that browsers rely on for media seeking and caching.
+ * Request headers that are always forwarded to the backend. Besides
+ * `Content-Type` and `Accept` these are the conditional / range headers that
+ * browsers rely on for media seeking and caching, plus `Content-Length`.
+ *
+ * `Content-Length` matters because the body is *streamed*: without it `fetch`
+ * frames the upstream request with `Transfer-Encoding: chunked`, and a backend
+ * asking for the declared length (e.g. Servlet `getContentLengthLong()`) then
+ * gets `-1`. Backends use that value to reject an over-sized upload before
+ * reading a single byte, so dropping the header silently disables the check
+ * and turns a cheap rejection into a full transfer. The body is passed through
+ * byte for byte, so the incoming length stays accurate.
  */
 const ALWAYS_FORWARDED_HEADERS = [
   "content-type",
+  "content-length",
   "accept",
   "range",
   "if-range",
@@ -42,16 +50,54 @@ const ALWAYS_FORWARDED_HEADERS = [
 /**
  * Headers that must never be forwarded to the backend, even when listed in
  * `forwardRequestHeaders`. `Cookie` and `Host` would leak session state and
- * confuse virtual-host routing; `Authorization` is set by the proxy itself;
- * `Content-Length` and `Connection` are hop-by-hop / managed by `fetch`.
+ * confuse virtual-host routing, `Authorization` is set by the proxy itself,
+ * and `Connection` is hop-by-hop.
  */
-const NEVER_FORWARDED_HEADERS = new Set([
-  "cookie",
-  "host",
-  "authorization",
-  "content-length",
+const NEVER_FORWARDED_HEADERS = new Set(["cookie", "host", "authorization", "connection"]);
+
+/**
+ * Hop-by-hop response headers (RFC 9110 7.6.1). They describe the *upstream*
+ * connection, not the response, and must not be relayed to the client: a
+ * relayed `Transfer-Encoding: chunked` contradicts the framing Next.js applies
+ * to the response it actually sends.
+ */
+const HOP_BY_HOP_RESPONSE_HEADERS = [
   "connection",
-]);
+  "keep-alive",
+  "transfer-encoding",
+  "te",
+  "trailer",
+  "upgrade",
+  "proxy-authenticate",
+  "proxy-authorization",
+];
+
+/**
+ * The upstream response headers, corrected for what `fetch` did to the body.
+ *
+ * Node's `fetch` adds `Accept-Encoding: gzip, deflate` on its own and
+ * transparently *decodes* a compressed response, but leaves `Content-Encoding`
+ * and `Content-Length` describing the encoded bytes. Relaying them hands the
+ * client plain bytes labelled `gzip` and a length that does not match, which
+ * browsers report as `ERR_CONTENT_DECODING_FAILED`. Both are therefore dropped
+ * whenever the upstream response was encoded — and only then, so an
+ * uncompressed `206 Partial Content` keeps its `Content-Length`.
+ *
+ * Everything that describes the resource — `ETag`, `Accept-Ranges`,
+ * `Content-Range`, `Cache-Control`, `Content-Type`, `Content-Disposition` — is
+ * preserved untouched.
+ */
+function relayedResponseHeaders(upstream: Headers): Headers {
+  const headers = new Headers(upstream);
+  for (const name of HOP_BY_HOP_RESPONSE_HEADERS) {
+    headers.delete(name);
+  }
+  if (headers.has("content-encoding")) {
+    headers.delete("content-encoding");
+    headers.delete("content-length");
+  }
+  return headers;
+}
 
 /**
  * Create a route handler that proxies an authenticated request to the
@@ -103,6 +149,17 @@ export function createBackendProxyHandler(config: BackendProxyConfig): RouteHand
     const init: RequestInit & { duplex?: "half" } = {
       method: req.method,
       headers,
+      // A streamed body is single-use and cannot be replayed, so following a
+      // 307/308 — which must repeat the request with the same method and body —
+      // would fail after the stream has been consumed. Relay the 3xx and its
+      // `Location` to the client instead and let it decide. Unlike the browser
+      // Fetch spec, undici returns the real response here, not an opaque
+      // redirect with status 0.
+      redirect: "manual",
+      // Propagate cancellation: when the client aborts an upload, abort the
+      // upstream request too, so the backend stops reading and can roll back
+      // its partial write instead of draining a connection nobody is on.
+      signal: req.signal,
     };
     if (hasBody && req.body) {
       init.body = req.body;
@@ -113,7 +170,7 @@ export function createBackendProxyHandler(config: BackendProxyConfig): RouteHand
 
     return new Response(response.body, {
       status: response.status,
-      headers: response.headers,
+      headers: relayedResponseHeaders(response.headers),
     });
   };
 }
