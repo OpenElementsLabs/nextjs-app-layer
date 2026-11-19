@@ -8,3 +8,4 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@open-elements/ui@0.10.0'
+  - '@open-elements/ui@0.11.0'
