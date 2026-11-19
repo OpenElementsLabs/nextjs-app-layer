@@ -279,26 +279,43 @@ These are the same checks the release workflow runs in CI before publishing.
 
 ## Releasing a New Version
 
-Releases run through the tag-triggered GitHub Actions workflow
-([`.github/workflows/release.yml`](.github/workflows/release.yml)) — there is no
-local publishing step.
+Pushing a `v<version>` tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml).
+It runs the CI checks, _stages_ the npm publish and creates a **draft** GitHub Release. Nothing goes
+live until a maintainer approves both by hand (2FA).
 
-### Steps
+`package.json` always holds the last released version.
 
-1. Bump `version` in `package.json` and commit.
-2. Tag the commit `vX.Y.Z` (the tag must match `package.json`) and push the tag.
-3. CI verifies the tag, builds, type-checks, lints, formats, and tests, then
-   **stages** the package to npm via OIDC (trusted publishing — no token). The
-   version is uploaded to a staging queue and does **not** go live yet.
-4. Approve the staged release with 2FA — on [npmjs.com](https://www.npmjs.com/),
-   or via the CLI: `pnpm stage list` to find the id, then
-   `pnpm stage approve <stage-id>` (`pnpm stage reject <stage-id>` discards it).
-5. Publish the draft GitHub Release that the workflow created.
+1. **Check the upgrade guide.** Every user-visible change since the last release must be covered by
+   `docs/releases/upgrade-to-<version>.md` for the version you are about to release — review
+   `git log v<last-version>..HEAD` against it. Commit the guide before bumping.
+2. **Bump the version** on an up-to-date, clean `main`. This commits the new version and creates the
+   matching tag in one step; only plain `A.B.C` versions are accepted:
 
-### One-time prerequisites
+   ```bash
+   pnpm version minor --message "chore: release %s"
+   ```
 
-- A **Trusted Publisher** is configured for the package on npmjs.com (repository
-  `OpenElementsLabs/nextjs-app-layer`, workflow `release.yml`, allowed action
-  `pnpm stage publish`).
-- No `NPM_TOKEN` is required — authentication uses OIDC, and provenance
-  attestations are generated automatically.
+3. **Push** — the tag starts the release:
+
+   ```bash
+   git push --follow-tags origin main
+   ```
+
+4. **Approve the npm publish** once the workflow is green, on npmjs.com or with
+   `pnpm stage list` and `pnpm stage approve <stage-id>`.
+5. **Publish the draft GitHub Release** after reviewing its generated notes.
+
+### If something goes wrong
+
+- **Workflow failed, nothing staged:** delete the tag, commit the fix, and tag again by hand —
+  `package.json` already holds the release version, so do not run `pnpm version` again:
+
+  ```bash
+  git tag -d v<version> && git push origin :refs/tags/v<version>
+  # commit the fix, then:
+  git tag -a v<version> -m "<version>" && git push origin v<version>
+  ```
+
+- **Workflow failed after staging:** discard the stage on npmjs.com, then re-cut the tag as above.
+- **Wrong content already approved on npm:** published versions are immutable — release a patch
+  version instead.
