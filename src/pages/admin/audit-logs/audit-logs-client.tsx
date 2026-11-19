@@ -20,19 +20,10 @@ import {
 import { useAppLayerTranslations } from "../../../translations/provider";
 import { useApiClient } from "../../../hooks/api-client";
 import type { AuditLogDto, Page, UserDto } from "../../../api/types";
+import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../../lib/page-size";
 
-export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200] as const;
-export const DEFAULT_PAGE_SIZE = 20;
 export const PAGE_SIZE_STORAGE_KEY = "pageSize.auditLogs";
 export const ALL_VALUE = "__all__";
-
-function readStoredPageSize(): number {
-  if (typeof window === "undefined") return DEFAULT_PAGE_SIZE;
-  const stored = localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
-  const parsed = Number(stored);
-  if ((PAGE_SIZE_OPTIONS as readonly number[]).includes(parsed)) return parsed;
-  return DEFAULT_PAGE_SIZE;
-}
 
 export function AuditLogsClient() {
   const t = useAppLayerTranslations();
@@ -41,7 +32,7 @@ export function AuditLogsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState<number>(() => readStoredPageSize());
+  const [pageSize, setPageSize] = useState<number>(() => readStoredPageSize(PAGE_SIZE_STORAGE_KEY));
   const [entityType, setEntityType] = useState<string | undefined>(undefined);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [entityTypes, setEntityTypes] = useState<readonly string[]>([]);

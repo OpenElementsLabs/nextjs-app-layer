@@ -29,18 +29,9 @@ import { useAppLayerTranslations } from "../../translations/provider";
 import { useApiClient } from "../../hooks/api-client";
 import type { WebhookDto, Page } from "../../api/types";
 import type { AppLayerTranslations } from "../../translations/provider";
+import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../lib/page-size";
 
-export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200] as const;
-export const DEFAULT_PAGE_SIZE = 20;
 export const PAGE_SIZE_STORAGE_KEY = "pageSize.webhooks";
-
-function readStoredPageSize(): number {
-  if (typeof window === "undefined") return DEFAULT_PAGE_SIZE;
-  const stored = localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
-  const parsed = Number(stored);
-  if ((PAGE_SIZE_OPTIONS as readonly number[]).includes(parsed)) return parsed;
-  return DEFAULT_PAGE_SIZE;
-}
 
 function formatStatus(status: number | null, t: AppLayerTranslations): string {
   if (status === null) return t.webhooks.status.neverCalled;
@@ -62,7 +53,7 @@ export function WebhooksClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState<number>(() => readStoredPageSize());
+  const [pageSize, setPageSize] = useState<number>(() => readStoredPageSize(PAGE_SIZE_STORAGE_KEY));
   const [deleteTarget, setDeleteTarget] = useState<WebhookDto | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);

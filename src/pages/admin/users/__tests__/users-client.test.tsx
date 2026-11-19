@@ -70,4 +70,22 @@ describe("UsersClient", () => {
     expect(screen.getByText(appLayerTranslations.en.users.loadError)).toBeInTheDocument();
     consoleError.mockRestore();
   });
+
+  it("renders with the default page size when storage access throws", async () => {
+    const storage = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    try {
+      const getUsers = vi.fn().mockResolvedValue(makePage([]));
+      renderWithLibProviders(<UsersClient />, {
+        apiClient: makeClient({ getUsers }),
+        language: "en",
+      });
+      await waitFor(() => {
+        expect(getUsers).toHaveBeenCalledWith(expect.objectContaining({ size: 20 }));
+      });
+    } finally {
+      storage.mockRestore();
+    }
+  });
 });
