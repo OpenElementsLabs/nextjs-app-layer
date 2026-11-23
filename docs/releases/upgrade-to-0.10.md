@@ -27,6 +27,10 @@ createAppLayerProxy(auth, { publicRoutes?: { exact?: string[]; prefix?: string[]
 - Invalid entries (no leading slash, or `"/"` as a `prefix`) throw when the factory is called, i.e. at build or server start.
 - Unauthenticated requests are redirected to `/login` with a relative `callbackUrl` carrying the requested path. `LoginClient` ignores that parameter today, so there is no visible change.
 
+#### Fix: `robots.txt` and `sitemap.xml` are no longer auth-gated
+
+The 0.9 matcher did not exclude them, so a crawler requesting `/robots.txt` or `/sitemap.xml` on a deployed app received the login redirect's HTML instead of the file. The new matcher excludes both. If the app worked around this — by serving them from a different path, or by adding them to its own matcher — remove that workaround.
+
 Dependencies did not change. Leave `next`, `next-auth`, `react`, `react-dom`, `lucide-react` and `@open-elements/ui` as they are.
 
 ### Steps
@@ -51,7 +55,7 @@ Dependencies did not change. Leave `next`, `next-auth`, `react`, `react-dom`, `l
    // `config` MUST be a static literal here; it cannot be imported.
    export const config = {
      matcher: [
-       "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+       "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
      ],
    };
    ```

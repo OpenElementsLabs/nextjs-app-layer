@@ -21,7 +21,7 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
  */
 const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };
 
@@ -54,6 +54,27 @@ describe("canonical coarse matcher", () => {
 
   it("does not match the favicon", () => {
     expect(matches("/favicon.ico")).toBe(false);
+  });
+
+  it("does not match robots.txt, so crawlers can read it unauthenticated", () => {
+    expect(matches("/robots.txt")).toBe(false);
+  });
+
+  it("does not match sitemap.xml, so crawlers can read it unauthenticated", () => {
+    expect(matches("/sitemap.xml")).toBe(false);
+  });
+
+  it("still protects the crawler file names outside the site root", () => {
+    // The negative lookahead is anchored at the start of the path, so only the
+    // well-known locations are public — not an arbitrary nested route that
+    // happens to end in the same name.
+    expect(matches("/reports/robots.txt")).toBe(true);
+    expect(matches("/reports/sitemap.xml")).toBe(true);
+  });
+
+  it("still protects other XML and text resources", () => {
+    expect(matches("/api/export.xml")).toBe(true);
+    expect(matches("/notes.txt")).toBe(true);
   });
 
   it.each([

@@ -234,3 +234,20 @@ An AI-executable upgrade guide under `docs/releases/` covers the migration.
   consult it, so it becomes dead code for anyone using the new proxy. It is harmless to keep and
   removing it is a second breaking change; the recommendation is to keep it and document that the
   proxy applies the same `isAuthorized` predicate.
+
+---
+
+## Drift Log
+
+### 2026-11-23 — Caused by spec `003-public-crawler-files`
+
+- **Affected element:** the canonical coarse matcher published for consumers to copy
+- **Original design:** listed under *Open questions* as undecided — the matcher excluded Next.js
+  internals and asset extensions only, so `/robots.txt` and `/sitemap.xml` were answered with a
+  redirect to `/login`
+- **Current state:** the matcher additionally excludes `robots\.txt` and `sitemap\.xml`, so both are
+  publicly readable. The exclusion is anchored at the site root; `/reports/robots.txt` and other
+  `.txt`/`.xml` routes stay protected.
+- **Reason:** spec 003 resolved this spec's first open question. It was deliberately left open here
+  because changing the matcher changes behaviour for all five consuming apps, which warranted its
+  own decision. 0.10.0 was still unreleased when 003 landed, so consumers see one matcher, not two.

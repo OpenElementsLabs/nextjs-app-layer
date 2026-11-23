@@ -193,7 +193,7 @@ export default createAppLayerProxy(auth);
 // app routes belong in `publicRoutes`, not in this regex.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };
 ```
@@ -267,7 +267,7 @@ literal either and fails the same silent way. Copy the string below verbatim:
 ```ts
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };
 ```
@@ -275,6 +275,11 @@ export const config = {
 Note that `/api` is deliberately **not** excluded, unlike the Next.js and
 Auth.js documented examples: `createBackendProxyHandler` is mounted under
 `/api/*` and must stay behind the auth check.
+
+`robots.txt` and `sitemap.xml` are excluded because a crawler carries no
+session and would otherwise receive the login page instead of the file. Only
+those two names at the site root are public — the lookahead is anchored there,
+so `/reports/robots.txt` and any other `.txt` or `.xml` route stay protected.
 
 ### Next.js 16
 
