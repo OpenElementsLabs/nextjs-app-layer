@@ -101,3 +101,21 @@ middleware matcher could be replaced by an API. Deferred because it depends on d
 the `next` peer dependency to 16, which is a separate call.
 
 **Prerequisite:** The proxy factory API issue (replaces the copied matcher), and a decision to support Next.js 16.
+
+## Measure test coverage in the build
+
+`.claude/conventions/software-quality.md` requires frontend code to reach at least 70 % coverage,
+measured on the code a feature adds or changes, with the build failing below the threshold. This
+repo cannot produce the number at all: no `@vitest/coverage-*` provider is installed and the `test`
+script is a bare `vitest run`. Coverage can therefore only be argued by inspection, which is not
+what the convention asks for.
+
+- Add a coverage provider and a threshold gate to `vitest.config.ts`.
+- Wire it into the `verify` job in `.github/workflows/ci.yml` so a PR fails below the floor.
+- `open-transcript` already runs `vitest run --coverage` and can serve as the reference.
+
+**Context:** Surfaced during `/quality-review` of spec 002 (app-layer proxy factory API). Deferred
+because it predates the spec, affects every file in the repo, and adding a devDependency plus a
+build gate to a breaking-API PR would obscure that PR.
+
+**Prerequisite:** None.
