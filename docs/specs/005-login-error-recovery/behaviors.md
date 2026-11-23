@@ -112,12 +112,20 @@ applied — that failure is the proof they reproduce the bug, and #16 requires i
 - **When** the login button is clicked and the IdP flow completed
 - **Then** the user ends up signed in on `/` **[e2e]** **[red-first]**
 
-### An access-denied response from the IdP is distinguished
+### An error from the identity provider is recoverable, not a dead end
 
-- **Given** the mock IdP configured to return `error=access_denied` to the callback
-- **When** the login is attempted
-- **Then** the page shows the access-denied message, **not** the expired/interrupted one, and is not
-  on `/api/auth/error` **[e2e]**
+- **Given** a login that has reached the IdP
+- **When** the IdP answers the callback with `error=access_denied`, as it does when the user declines
+  consent
+- **Then** the page is on `/login` with an enabled button and is not on `/api/auth/error` **[e2e]**
+
+**Corrected against measurement.** This scenario originally read "shows the access-denied message".
+It does not: measured against `@auth/core` 0.41.0, an IdP `error=access_denied` surfaces as
+`OAuthCallbackError`, which is in the client-safe set and is therefore classified as retryable.
+`AccessDenied` arises from the `signIn` callback refusing a sign-in, which this library's
+configuration never does — so that branch is defensive and is covered by unit tests only. Treating a
+declined consent as retryable is right in any case: declining by accident is recoverable, and
+declining deliberately simply shows the message again.
 
 ## Unaffected flows
 

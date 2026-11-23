@@ -147,6 +147,27 @@ the honest way to reproduce the LibreWolf case: that browser deletes cookies on 
 tabs. Note that spec 004 established the hardened profile itself does **not** break the flow, so the
 hardening is not what is being tested here — the missing cookie is.
 
+## Measured during implementation
+
+Two findings from driving the real flow through the harness, both of which correct assumptions in
+the issue:
+
+**The underlying error is `CallbackRouteError`, not `InvalidCheck`.** The server log shows
+`InvalidCheck: pkceCodeVerifier value could not be parsed`, but the `AuthError` subclass Auth.js
+raises is `CallbackRouteError`, and neither is in `clientErrors`, so both collapse to
+`Configuration`. Had the message mapping enumerated types as the issue proposes, it would have
+missed this one. The classification approach is unaffected.
+
+**An IdP `error=access_denied` surfaces as `OAuthCallbackError`, not `AccessDenied`.** The issue
+expects the access-denied message for that flow; it does not appear. `AccessDenied` comes from the
+`signIn` callback refusing a sign-in, which `createAppLayerAuth` never does — so that branch is
+defensive and unit-tested only. `OAuthCallbackError` is client-safe and classified as retryable,
+which is the right outcome: declining consent by accident is recoverable.
+
+Noted separately, outside this spec's scope: the authorize URL carries **no `state` parameter** — the
+provider runs the PKCE check alone. #16 puts changing the OIDC checks explicitly out of scope, so
+this is recorded in `docs/TODO.md` for its own decision rather than altered here.
+
 ## Regression risk
 
 **`pages.error` now swallows genuine misconfiguration.** This is the real cost and it should be

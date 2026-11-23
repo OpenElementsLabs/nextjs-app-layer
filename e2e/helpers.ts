@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type BrowserContext, type Page } from "@playwright/test";
 
 /**
  * Shared steps for the E2E suite. Keeping the identity provider's markup behind a
@@ -10,25 +10,76 @@ import { expect, type Page } from "@playwright/test";
 const IDP_USERNAME_FIELD = 'input[name="username"]';
 const IDP_SUBMIT_BUTTON = 'input[type="submit"]';
 
+/** The app's own login button, by its accessible name in either language. */
+const LOGIN_BUTTON = /log ?in|anmelden/i;
+
+/** Auth.js' PKCE cookie — the one whose absence breaks a resumed login. */
+export const PKCE_COOKIE = "authjs.pkce.code_verifier";
+
 /**
- * Drive a complete login: open the app's login page, start the flow, fill the
- * identity provider's form and submit it.
+ * Begin a login and stop on the identity provider's form.
+ *
+ * Split out from {@link loginViaIdp} because the interrupted-login scenarios
+ * (#16) need to interleave two of these, or to tamper with cookies, before the
+ * form is submitted.
+ */
+export async function startLoginAtIdp(page: Page): Promise<void> {
+  await page.goto("/login");
+  await page.getByRole("button", { name: LOGIN_BUTTON }).click();
+  await page.waitForSelector(IDP_USERNAME_FIELD);
+}
+
+/**
+ * Submit the identity provider's form.
  *
  * The username is recorded in the IdP's log but does **not** become the `sub`
  * claim: a matching `requestMapping` in `e2e/mock-oauth2-config.json` takes
  * priority, so the session's claims come from that configuration. Verified
  * against image 3.0.1.
  */
-export async function loginViaIdp(page: Page, username = "e2e-user"): Promise<void> {
-  await page.goto("/login");
-
-  await page.getByRole("button", { name: /log ?in/i }).click();
-
-  await page.waitForSelector(IDP_USERNAME_FIELD);
+export async function submitIdpForm(page: Page, username = "e2e-user"): Promise<void> {
   await page.fill(IDP_USERNAME_FIELD, username);
   await page.click(IDP_SUBMIT_BUTTON);
+}
 
+/** Drive a complete login, from the app's login page to a landed session. */
+export async function loginViaIdp(page: Page, username = "e2e-user"): Promise<void> {
+  await startLoginAtIdp(page);
+  await submitIdpForm(page, username);
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+}
+
+/**
+ * Remove Auth.js' PKCE cookie, reproducing scenario D of #16.
+ *
+ * Deliberately a clear-all plus restore rather than
+ * `clearCookies({ name: PKCE_COOKIE })`. Measured: the name filter has no effect
+ * under the hardened Firefox profile — `privacy.firstparty.isolate` partitions
+ * the cookie so Playwright's filter does not match it, while plain Firefox and
+ * Chromium delete it fine. A filtered call therefore *silently* left the cookie
+ * in place there, and the login simply succeeded: a scenario that verifies
+ * nothing while looking like it does.
+ *
+ * The cookie is httpOnly, so clearing it from page JavaScript is not an option.
+ *
+ * The precondition is asserted, not assumed, so a future browser change surfaces
+ * as a clear failure here instead of as a test that quietly stops testing.
+ */
+export async function deletePkceCookie(context: BrowserContext): Promise<void> {
+  const keep = (await context.cookies()).filter((cookie) => cookie.name !== PKCE_COOKIE);
+
+  await context.clearCookies();
+  await context.addCookies(keep);
+
+  const remaining = (await context.cookies()).filter((cookie) => cookie.name === PKCE_COOKIE);
+  expect(remaining, `${PKCE_COOKIE} is still present — this scenario would test nothing`).toEqual(
+    [],
+  );
+}
+
+/** The app's login button, for assertions about its enabled state. */
+export function loginButton(page: Page) {
+  return page.getByRole("button", { name: LOGIN_BUTTON });
 }
 
 /**

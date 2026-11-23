@@ -2,6 +2,11 @@ export const de = {
   login: {
     button: "Anmelden",
     error: "Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
+    /** Shown for every auth error except AccessDenied: retrying resolves them. */
+    errorExpired:
+      "Deine Anmeldung ist abgelaufen oder wurde unterbrochen. Bitte melde dich erneut an.",
+    /** Shown for AccessDenied, where retrying does not help. */
+    errorAccessDenied: "Zugriff verweigert.",
     developedBy: "Entwickelt von",
   },
   nav: {
