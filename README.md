@@ -49,7 +49,8 @@ pnpm add @open-elements/ui next next-auth react react-dom lucide-react
 - `createAppLayerAuth({ issuer, clientId, clientSecret, ...tuning })`
 - `createBackendProxyHandler({ backendUrl, auth, forwardRequestHeaders? })`
 - `createLogoutHandler({ auth, oidcIssuer, authUrl })`
-- `middlewareConfig` (reference value — see warning below)
+- `createAppLayerProxy(auth, { publicRoutes? })` — the auth proxy (formerly the
+  hand-copied matcher; see [Auth proxy](#auth-proxy))
 
 ### `@open-elements/nextjs-app-layer/server/next-auth-types`
 
@@ -181,18 +182,18 @@ export const GET = createLogoutHandler({
 ```
 
 ```ts
-// src/middleware.ts
-export { auth as middleware } from "@/auth";
+// src/middleware.ts  (Next.js 15 — on Next.js 16 name the file src/proxy.ts)
+import { createAppLayerProxy } from "@open-elements/nextjs-app-layer/server";
+import { auth } from "@/auth";
 
-// `config` MUST be a static literal here. Next.js' build-time analyzer
-// extracts the matcher directly from middleware.ts and does NOT follow
-// re-exports across package boundaries. Re-exporting the lib's
-// `middlewareConfig` as `config` silently disables the matcher in production
-// — `/_next/static/*` requests get routed through the auth middleware and
-// the deployment breaks. The lib's `middlewareConfig` is reference-only.
+export default createAppLayerProxy(auth);
+
+// `config` MUST be a static literal here — see "Auth proxy" below for why it
+// cannot be imported. It excludes Next.js internals and static assets only;
+// app routes belong in `publicRoutes`, not in this regex.
 export const config = {
   matcher: [
-    "/((?!api/auth|api/logout|login|_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };
 ```
@@ -222,6 +223,74 @@ export default createAuditLogsPage({ auth });
 ```
 
 The same 2-line shape applies to every other admin page.
+
+## Auth proxy
+
+`createAppLayerProxy(auth, options?)` protects every route the matcher lets
+through. Requests without a usable session are redirected to `/login` with a
+relative `callbackUrl` carrying the originally requested path.
+
+Always public, not configurable: `/api/auth`, `/api/logout` and `/login`
+(prefix matches). App-specific public routes go in `publicRoutes`:
+
+```ts
+export default createAppLayerProxy(auth, {
+  publicRoutes: {
+    // public when the pathname equals the entry exactly
+    exact: ["/sw.js", "/manifest.webmanifest", "/offline"],
+    // public when the pathname equals the entry or continues it after a "/"
+    prefix: ["/public-docs"],
+  },
+});
+```
+
+A prefix matches only on a path-segment boundary, so `/record` does not open
+`/recordings`. Anything not listed is protected — classification fails closed.
+Invalid entries (no leading slash, or `"/"` as a prefix) throw when the factory
+is called, i.e. at build or server start, rather than silently widening the
+public surface at request time.
+
+### Why the matcher must be copied and cannot be imported
+
+Next.js extracts `config.matcher` by parsing the AST of the middleware file
+itself and reading a literal `const config` declaration. If it finds none it
+throws internally, swallows the error — its own source comment says *"`export
+config` doesn't exist, or other unknown error thrown by swc, silence them"* —
+and falls back to a catch-all matcher. The middleware then runs on every
+request including `/_next/static/*`, which breaks the deployment with no error
+and no warning.
+
+This is why **no matcher value is exported from this package**, not even as a
+reference constant: `export const config = { matcher: imported }` is not a
+literal either and fails the same silent way. Copy the string below verbatim:
+
+```ts
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+  ],
+};
+```
+
+Note that `/api` is deliberately **not** excluded, unlike the Next.js and
+Auth.js documented examples: `createBackendProxyHandler` is mounted under
+`/api/*` and must stay behind the auth check.
+
+### Next.js 16
+
+Next.js 16 renames the `middleware` file convention to `proxy`. Name the file
+`src/proxy.ts` instead of `src/middleware.ts`; everything above is otherwise
+unchanged, since the proxy is a default export rather than a named
+`middleware` export. A codemod exists:
+`npx @next/codemod@canary middleware-to-proxy .`
+
+### The proxy is not the only gate
+
+Auth.js is explicit about this: *"You should not rely on the proxy exclusively
+for authorization. Always ensure that the session is verified as close to your
+data fetching as possible."* Next.js adds that a route refactor can move a
+Server Function out of the matcher's reach without warning. Verify the session
+in Server Actions and route handlers as well.
 
 ## OE conventions this lib assumes
 

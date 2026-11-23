@@ -74,15 +74,15 @@ no frontend test step is required — `LoginClient` is untouched.
 
 ## Step 5: README
 
-- [ ] Replace the `middlewareConfig` entry in the server entry-point list with `createAppLayerProxy`
-- [ ] Rewrite the wiring section to show the factory with `publicRoutes`, for both the Next 15 `middleware.ts` and the Next 16 `proxy.ts` conventions
-- [ ] Document the canonical coarse matcher literal and why it must be copied rather than imported
-- [ ] Add the Auth.js warning that the proxy must not be the only authorization gate
+- [x] Replace the `middlewareConfig` entry in the server entry-point list with `createAppLayerProxy`
+- [x] Rewrite the wiring section to show the factory with `publicRoutes`, for both the Next 15 `middleware.ts` and the Next 16 `proxy.ts` conventions
+- [x] Document the canonical coarse matcher literal and why it must be copied rather than imported
+- [x] Add the Auth.js warning that the proxy must not be the only authorization gate
 
 **Acceptance criteria:**
-- [ ] A reader can wire the proxy from the README alone, on Next 15 and Next 16
-- [ ] The README no longer references `middlewareConfig`
-- [ ] `pnpm run format:check` passes
+- [x] A reader can wire the proxy from the README alone, on Next 15 and Next 16
+- [x] The README no longer references `middlewareConfig`
+- [x] `pnpm run format:check` passes
 
 **Related behaviors:** — (documentation)
 
@@ -90,13 +90,13 @@ no frontend test step is required — `LoginClient` is untouched.
 
 ## Step 6: Upgrade guide
 
-- [ ] Create `docs/releases/upgrade-to-0.10.md` as an AI-executable prompt, matching the style of `upgrade-to-0.9.md`
-- [ ] Describe the `middlewareConfig` removal, the new factory, how to translate an existing app-specific matcher into `publicRoutes`, and guard rails
-- [ ] Do **not** bump `package.json` — the version bump belongs to the separate release commit, as in 0.9.0
+- [x] Create `docs/releases/upgrade-to-0.10.md` as an AI-executable prompt, matching the style of `upgrade-to-0.9.md`
+- [x] Describe the `middlewareConfig` removal, the new factory, how to translate an existing app-specific matcher into `publicRoutes`, and guard rails
+- [x] Do **not** bump `package.json` — the version bump belongs to the separate release commit, as in 0.9.0
 
 **Acceptance criteria:**
-- [ ] The guide translates `open-transcript`'s four extra routes as a worked example
-- [ ] Guard rails forbid re-exporting a matcher and bundling the Next 16 file rename into the same change
+- [x] The guide translates `open-transcript`'s four extra routes as a worked example
+- [x] Guard rails forbid re-exporting a matcher and bundling the Next 16 file rename into the same change
 
 **Related behaviors:** — (documentation)
 
