@@ -6,4 +6,5 @@ export type { AppLayerAuthConfig } from "./server/auth";
 export { createBackendProxyHandler, createLogoutHandler } from "./server/route-handlers";
 export type { BackendProxyConfig, LogoutHandlerConfig } from "./server/route-handlers";
 
-export { middlewareConfig } from "./server/middleware";
+export { createAppLayerProxy } from "./server/proxy";
+export type { AppLayerProxyOptions, AppLayerPublicRoutes } from "./server/proxy";

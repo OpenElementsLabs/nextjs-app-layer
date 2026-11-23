@@ -45,3 +45,77 @@ it, and it touches both the library's HTTP client and the consumer's servlet
 container.
 
 **Prerequisite:** #11 (streamed body, forwarded `Content-Length`).
+
+## Decide on one E2E auth pattern across Open Elements frontends
+
+Two incompatible approaches to authenticated E2E tests now exist side by side. `open-transcript`
+(`frontend/playwright.config.ts`, `frontend/e2e/session.ts`) deliberately **bypasses** the identity
+provider: it mints its own session cookie signed with `AUTH_SECRET` and points OIDC at a closed port
+(`http://localhost:9/none`) so that an escaping request fails loudly. The harness planned in #17
+does the opposite and drives a real mock OIDC server through the full redirect flow.
+
+Both are defensible for their own purpose — #17 exists precisely to test callback and PKCE handling,
+which a minted cookie cannot cover, while `open-transcript` needs auth out of the way to test an
+offline shell. What is missing is a documented rule for which to reach for, so the choice stops
+being incidental.
+
+- Minted cookie: fast, no Docker, but cannot test login, callback, PKCE, logout or refresh.
+- Real mock IdP: covers those flows, costs a Docker dependency and CI wall-clock.
+
+**Context:** Surfaced during the grill session for issue #17 (Playwright E2E harness), after finding
+that `open-transcript` already ships a mature Playwright setup built on the opposite assumption.
+Deferred because #17 should not be blocked on a cross-repo convention, and the convention is easier
+to write once both patterns have run in CI for a while.
+
+**Prerequisite:** #17 (the harness, so the second pattern actually exists in practice).
+
+## Align E2E script and OIDC env-var naming across repos
+
+The existing frontend E2E setups disagree on names, and issue #17 would add a third variant. The
+Playwright script is `test:e2e` in `open-transcript` but proposed as `e2e` in #17, and the issuer
+env var is `OIDC_ISSUER_URI` in `open-transcript` and `open-crm` but `OIDC_ISSUER` in #17.
+
+Since `createAppLayerAuth` takes the issuer as a config argument and leaves the env-var name to the
+consuming app, nothing enforces consistency today. Picking one spelling per concept and recording it
+in the conventions would stop each new repo from re-deciding.
+
+**Context:** Surfaced during the grill session for issue #17 while comparing the proposed harness
+against the existing setups in `open-transcript` and `open-crm`. Deferred because it is a
+cross-repo convention question, not a blocker for the harness itself.
+
+**Prerequisite:** None.
+
+## Migrate consuming apps from `middleware.ts` to `proxy.ts` (Next.js 16)
+
+Next.js 16 deprecates the `middleware` file convention and renames it to `proxy` — the file, the
+exported function name, and the Auth.js documented pattern (`export { auth as proxy } from "@/auth"`).
+A codemod exists: `npx @next/codemod@canary middleware-to-proxy .`. The library's peer dependency is
+still `next: ^15.3.0`, so nothing is forced yet.
+
+Five apps carry a `middleware.ts` that will need this: `open-crm`, `open-tasks`, `open-transcript`,
+`bewirtung` and `application-skeleton`. The new proxy factory API is being named for the `proxy`
+convention up front so this becomes a file rename rather than a second API migration.
+
+**Context:** Surfaced during the grill session for issue #17 when researching whether the copied
+middleware matcher could be replaced by an API. Deferred because it depends on deciding when to raise
+the `next` peer dependency to 16, which is a separate call.
+
+**Prerequisite:** The proxy factory API issue (replaces the copied matcher), and a decision to support Next.js 16.
+
+## Measure test coverage in the build
+
+`.claude/conventions/software-quality.md` requires frontend code to reach at least 70 % coverage,
+measured on the code a feature adds or changes, with the build failing below the threshold. This
+repo cannot produce the number at all: no `@vitest/coverage-*` provider is installed and the `test`
+script is a bare `vitest run`. Coverage can therefore only be argued by inspection, which is not
+what the convention asks for.
+
+- Add a coverage provider and a threshold gate to `vitest.config.ts`.
+- Wire it into the `verify` job in `.github/workflows/ci.yml` so a PR fails below the floor.
+- `open-transcript` already runs `vitest run --coverage` and can serve as the reference.
+
+**Context:** Surfaced during `/quality-review` of spec 002 (app-layer proxy factory API). Deferred
+because it predates the spec, affects every file in the repo, and adding a devDependency plus a
+build gate to a breaking-API PR would obscure that PR.
+
+**Prerequisite:** None.

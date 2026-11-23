@@ -88,6 +88,9 @@ export function createAppLayerAuth(
     session: { strategy: "jwt", maxAge: sessionMaxAge, updateAge: sessionUpdateAge },
     jwt: { maxAge: sessionMaxAge },
     callbacks: {
+      // Only consulted when `auth` is used as middleware without a callback.
+      // `createAppLayerProxy` passes a callback, so it applies `isAuthorized`
+      // itself — the same predicate, deliberately, so the two cannot drift.
       authorized({ auth: session }) {
         return isAuthorized(session);
       },
