@@ -1,0 +1,37 @@
+# The identity provider for the Playwright suite. The same file is used locally
+# and in CI.
+#
+# The published host port matters: the server derives the `issuer` claim from the
+# request's Host header, so the browser and the Next.js server must both reach it
+# at this address. Using the compose network name from the server side would
+# yield a different issuer and fail token validation.
+services:
+  mock-oauth2:
+    # Pinned, per the reproducible-builds convention. A floating tag would let the
+    # identity provider change underneath a green test suite.
+    image: ghcr.io/navikt/mock-oauth2-server:3.0.1
+    ports:
+      - "${MOCK_OAUTH2_PORT:-8300}:8080"
+    volumes:
+      - ./mock-oauth2-config.json:/config.json:ro
+    environment:
+      JSON_CONFIG_PATH: /config.json
+      LOG_LEVEL: INFO
+    # `docker compose up -d --wait` blocks on this, so the suite never races the
+    # identity provider's startup. curl is not in the image; wget is. It must be a
+    # GET: the server answers HEAD with 405, so `wget --spider` reports the
+    # container unhealthy even once it is serving correctly.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://localhost:8080/default/.well-known/openid-configuration",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 3s

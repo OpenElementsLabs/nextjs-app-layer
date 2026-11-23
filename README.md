@@ -343,13 +343,72 @@ pnpm run build      # compile TypeScript to dist/ (tsc -p tsconfig.build.json)
 ### Quality checks
 
 ```bash
-pnpm run typecheck      # type-check without emitting
-pnpm run lint           # ESLint over src/
+pnpm run typecheck      # type-check src/ and the E2E harness, without emitting
+pnpm run lint           # ESLint over src/, e2e/ and playwright.config.ts
 pnpm run format:check   # Prettier check (use `pnpm run format` to auto-fix)
 pnpm run test           # Vitest (use `pnpm run test:watch` while developing)
 ```
 
 These are the same checks the release workflow runs in CI before publishing.
+`pnpm run test` covers the unit tests only — it needs neither Docker nor a browser.
+
+### End-to-end tests
+
+The unit tests cannot reach the flows that need a running app, a real identity
+provider and a real browser at once: login, callback handling, proxy redirects,
+logout and token refresh. The E2E suite covers those.
+
+**Docker is required.**
+
+```bash
+pnpm e2e:up     # start the mock OIDC server (waits until it is healthy)
+pnpm e2e        # build the library, then run Playwright
+pnpm e2e:down   # stop the mock OIDC server
+```
+
+New specs go in `e2e/` as `*.spec.ts`; shared steps belong in
+[`e2e/helpers.ts`](e2e/helpers.ts) so an upstream change to the identity
+provider's markup is fixed in one place.
+
+The suite runs in three projects — `chromium`, `firefox` and `firefox-hardened`,
+a LibreWolf-like profile with fingerprinting resistance and first-party
+isolation. If the hardened profile ever fails, that is a finding about real
+users; do not loosen the prefs to make the suite green.
+
+Two ports are published, both overridable so several OE stacks can run at once:
+
+| | Default | Override |
+|---|---|---|
+| Fixture app | `3300` | `E2E_PORT` |
+| Mock OIDC server | `8300` | `MOCK_OAUTH2_PORT` |
+
+The issuer URL must be identical for the browser and the Next.js server. The
+mock server derives the `issuer` claim from the request's Host header, so
+addressing it over the compose network instead would produce a different issuer
+and fail token validation.
+
+#### The fixture app
+
+[`e2e/fixture-app/`](e2e/fixture-app/) is a private workspace package — a minimal
+Next.js app wiring `createAppLayerAuth`, the NextAuth route handler,
+`createAppLayerProxy` and `createLoginPage` the way a consumer does. It depends on
+the library with `workspace:*`, so the suite always exercises the code in the
+working tree rather than a published version.
+
+Two deliberate deviations from a real consuming app:
+
+- It uses a **minimal root layout instead of `OERootLayout`**. `OERootLayout`
+  imports `next/font/google`, which downloads fonts at build time and would make
+  every CI run depend on `fonts.googleapis.com` for something that tests nothing
+  about authentication. The fixture layout replicates the provider stack the
+  library's client components need (`SessionProvider`, `LanguageProvider`,
+  `AppLayerTranslationProvider`).
+- It has **no Tailwind setup**. The specs assert behaviour, not appearance.
+
+It also declares `@playwright/test` as a devDependency even though it runs no
+tests. `next` lists `@playwright/test` as an optional peer dependency, so without
+it pnpm resolves a *second* copy of `next` for this package — which breaks the
+build with incompatible `NextRequest` types.
 
 ## Releasing a New Version
 

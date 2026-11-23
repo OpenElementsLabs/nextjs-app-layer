@@ -4,3 +4,9 @@ dist/
 .env
 .claude/settings.local.json
 .idea
+
+# E2E harness build output
+e2e/fixture-app/.next/
+e2e/fixture-app/next-env.d.ts
+playwright-report/
+test-results/

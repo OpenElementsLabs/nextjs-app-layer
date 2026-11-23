@@ -119,3 +119,21 @@ because it predates the spec, affects every file in the repo, and adding a devDe
 build gate to a breaking-API PR would obscure that PR.
 
 **Prerequisite:** None.
+
+## `OERootLayout` makes every consumer build depend on Google Fonts
+
+`src/layout/root-layout.tsx` imports `Montserrat` and `Lato` through `next/font/google`. Next.js
+resolves those at **build time**, so every consuming app's `next build` — including every Docker
+image build and every CI run — requires `fonts.googleapis.com` to be reachable. A build in a network-
+restricted or air-gapped environment fails, and an outage upstream breaks unrelated deployments.
+
+Next.js supports self-hosting font files via `next/font/local`, which would remove the dependency at
+the cost of committing the font binaries to the package.
+
+**Context:** Surfaced while implementing spec 004 (Playwright E2E harness). The fixture app
+deliberately uses a minimal layout instead of `OERootLayout` for exactly this reason — pulling
+Google Fonts into the critical path of a test harness that is supposed to be reliable, for something
+that tests nothing about authentication. Deferred because changing the font strategy affects every
+consuming app's rendering and deserves its own decision.
+
+**Prerequisite:** None.
