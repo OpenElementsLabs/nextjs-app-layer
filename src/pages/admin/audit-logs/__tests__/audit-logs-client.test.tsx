@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import { AuditLogsClient } from "../audit-logs-client";
-import { renderWithLibProviders } from "../../../../test/render-with-providers";
-import { appLayerTranslations } from "../../../../translations/provider";
-import type { AppLayerApiClient } from "../../../../api/client";
-import type { AuditLogDto, Page, UserDto } from "../../../../api/types";
+import { AuditLogsClient } from "../audit-logs-client.js";
+import { renderWithLibProviders } from "../../../../test/render-with-providers.js";
+import { appLayerTranslations } from "../../../../translations/provider.js";
+import type { AppLayerApiClient } from "../../../../api/client.js";
+import type { AuditLogDto, Page, UserDto } from "../../../../api/types.js";
 
 function emptyPage<T>(): Page<T> {
   return {

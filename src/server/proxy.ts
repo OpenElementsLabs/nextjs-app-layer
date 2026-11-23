@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextMiddleware } from "next/server";
 import type { NextAuthRequest, NextAuthResult } from "next-auth";
-import { isAuthorized } from "./oidc-tokens";
+import { isAuthorized } from "./oidc-tokens.js";
 
 /**
  * Routes the auth flow itself needs in order to work at all: the Auth.js

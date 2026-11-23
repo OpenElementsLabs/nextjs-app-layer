@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ROLE_APP_ADMIN, ROLE_APP_USER, ROLE_IT_ADMIN, hasRole } from "../roles";
+import { ROLE_APP_ADMIN, ROLE_APP_USER, ROLE_IT_ADMIN, hasRole } from "../roles.js";
 
 describe("roles", () => {
   it("exposes the canonical OE role names", () => {

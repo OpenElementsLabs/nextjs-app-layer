@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import { defaultApiClient, type AppLayerApiClient } from "../api/client";
+import { defaultApiClient, type AppLayerApiClient } from "../api/client.js";
 
 const ApiClientContext = createContext<AppLayerApiClient | null>(null);
 

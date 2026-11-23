@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_PAGE_SIZE, readStoredPageSize } from "../page-size";
+import { DEFAULT_PAGE_SIZE, readStoredPageSize } from "../page-size.js";
 
 const KEY = "pageSize.test";
 

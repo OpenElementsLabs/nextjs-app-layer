@@ -7,7 +7,7 @@ import type {
   TranslationConfigDto,
   UserDto,
   WebhookDto,
-} from "./types";
+} from "./types.js";
 
 export interface AppLayerApiClient {
   readonly getAuditLogs: (

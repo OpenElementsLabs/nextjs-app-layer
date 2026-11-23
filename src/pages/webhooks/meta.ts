@@ -1,6 +1,6 @@
 import { Webhook } from "lucide-react";
-import { ROLE_IT_ADMIN } from "../../lib/roles";
-import type { AppLayerTranslations } from "../../translations/provider";
+import { ROLE_IT_ADMIN } from "../../lib/roles.js";
+import type { AppLayerTranslations } from "../../translations/provider.js";
 
 export const webhooksPageMeta = {
   defaultRoute: "/admin/webhooks",

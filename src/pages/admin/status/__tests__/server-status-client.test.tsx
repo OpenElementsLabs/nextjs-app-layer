@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import { ServerStatusClient, type StatusCapabilitiesConfig } from "../server-status-client";
-import { renderWithLibProviders } from "../../../../test/render-with-providers";
+import { ServerStatusClient, type StatusCapabilitiesConfig } from "../server-status-client.js";
+import { renderWithLibProviders } from "../../../../test/render-with-providers.js";
 
 const HEIC_CONFIG: StatusCapabilitiesConfig = {
   endpoint: "/api/admin/capabilities",

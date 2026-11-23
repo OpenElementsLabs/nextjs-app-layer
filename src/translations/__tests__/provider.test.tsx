@@ -5,7 +5,7 @@ import {
   AppLayerTranslationProvider,
   useAppLayerTranslations,
   appLayerTranslations,
-} from "../provider";
+} from "../provider.js";
 
 afterEach(() => cleanup());
 

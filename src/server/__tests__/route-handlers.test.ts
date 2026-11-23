@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Session } from "next-auth";
 import type { NextRequest } from "next/server";
-import { createBackendProxyHandler } from "../route-handlers";
+import { createBackendProxyHandler } from "../route-handlers.js";
 
 const BACKEND_URL = "http://backend.test";
 

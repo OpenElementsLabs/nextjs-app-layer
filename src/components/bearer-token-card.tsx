@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Copy, Check, Eye, EyeOff } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../translations/provider";
+import { useAppLayerTranslations } from "../translations/provider.js";
 
 export function BearerTokenCard() {
   const t = useAppLayerTranslations();

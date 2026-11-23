@@ -12,7 +12,7 @@ import http from "node:http";
 import { gzipSync } from "node:zlib";
 import type { AddressInfo } from "node:net";
 import type { NextRequest } from "next/server";
-import { createBackendProxyHandler } from "../route-handlers";
+import { createBackendProxyHandler } from "../route-handlers.js";
 
 interface Received {
   readonly method: string;

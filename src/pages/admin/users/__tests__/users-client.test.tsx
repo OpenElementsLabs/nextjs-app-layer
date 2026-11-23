@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import { UsersClient } from "../users-client";
-import { renderWithLibProviders } from "../../../../test/render-with-providers";
-import { appLayerTranslations } from "../../../../translations/provider";
-import type { AppLayerApiClient } from "../../../../api/client";
-import type { Page, UserDto } from "../../../../api/types";
+import { UsersClient } from "../users-client.js";
+import { renderWithLibProviders } from "../../../../test/render-with-providers.js";
+import { appLayerTranslations } from "../../../../translations/provider.js";
+import type { AppLayerApiClient } from "../../../../api/client.js";
+import type { Page, UserDto } from "../../../../api/types.js";
 
 function makePage(items: UserDto[]): Page<UserDto> {
   return {

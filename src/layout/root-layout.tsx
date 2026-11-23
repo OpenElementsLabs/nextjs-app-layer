@@ -1,10 +1,10 @@
 import { Montserrat, Lato } from "next/font/google";
 import { LanguageProvider } from "@open-elements/ui";
 import type { Language } from "@open-elements/ui";
-import { SessionProvider } from "../components/session-provider";
-import { AppLayerTranslationProvider } from "../translations/provider";
-import { ApiClientProvider } from "../hooks/api-client";
-import type { AppLayerApiClient } from "../api/client";
+import { SessionProvider } from "../components/session-provider.js";
+import { AppLayerTranslationProvider } from "../translations/provider.js";
+import { ApiClientProvider } from "../hooks/api-client.js";
+import type { AppLayerApiClient } from "../api/client.js";
 
 const montserrat = Montserrat({
   subsets: ["latin"],

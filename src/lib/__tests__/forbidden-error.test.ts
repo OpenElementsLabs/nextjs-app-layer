@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ForbiddenError } from "../forbidden-error";
+import { ForbiddenError } from "../forbidden-error.js";
 
 describe("ForbiddenError", () => {
   it("is recognizable via instanceof", () => {

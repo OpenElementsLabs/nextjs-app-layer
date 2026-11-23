@@ -3,9 +3,9 @@ import { SessionProvider } from "next-auth/react";
 import { LanguageProvider, TooltipProvider } from "@open-elements/ui";
 import type { Language } from "@open-elements/ui";
 import type { Session } from "next-auth";
-import { AppLayerTranslationProvider, appLayerTranslations } from "../translations/provider";
-import { ApiClientProvider } from "../hooks/api-client";
-import type { AppLayerApiClient } from "../api/client";
+import { AppLayerTranslationProvider, appLayerTranslations } from "../translations/provider.js";
+import { ApiClientProvider } from "../hooks/api-client.js";
+import type { AppLayerApiClient } from "../api/client.js";
 
 const defaultSession: Session = {
   user: { name: "Test User", email: "test@example.com", image: null },

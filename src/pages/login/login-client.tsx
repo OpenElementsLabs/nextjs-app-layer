@@ -4,8 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { Button } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../../translations/provider";
-import type { AppLayerTranslations } from "../../translations/provider";
+import { useAppLayerTranslations } from "../../translations/provider.js";
+import type { AppLayerTranslations } from "../../translations/provider.js";
 
 export function LoginClient({
   appName,

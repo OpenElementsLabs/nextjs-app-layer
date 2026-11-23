@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useLanguage } from "@open-elements/ui";
-import { de } from "./de";
-import { en } from "./en";
+import { de } from "./de.js";
+import { en } from "./en.js";
 
 type DeepStringify<T> = {
   readonly [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;

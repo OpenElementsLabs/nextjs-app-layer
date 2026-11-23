@@ -1,7 +1,7 @@
 "use client";
 
-import { BearerTokenCard } from "../../../components/bearer-token-card";
-import { useAppLayerTranslations } from "../../../translations/provider";
+import { BearerTokenCard } from "../../../components/bearer-token-card.js";
+import { useAppLayerTranslations } from "../../../translations/provider.js";
 
 export function BearerTokenClient() {
   const t = useAppLayerTranslations();
