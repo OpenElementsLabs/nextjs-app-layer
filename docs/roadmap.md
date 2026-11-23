@@ -31,14 +31,23 @@ first two issues happen to touch.
 3. **Logout and token refresh** — independent of each other; either order. Both were explicitly out
    of scope for #17 ("can follow in separate issues on top of this harness").
 
-### Known risk: the hardened Firefox profile
+### The hardened Firefox profile
 
 #16's acceptance criteria require every scenario to pass in `chromium`, `firefox` **and**
-`firefox-hardened`. The hardened profile is not optional polish: the bug was first observed in
-LibreWolf, and such a profile partitions cookies by top-level site while the OIDC flow crosses
-origins (app and IdP are different ports, hence different sites). If the flow turns out not to
-complete under that profile, it blocks #16 and the two flows below — not only #17. This is the
-single biggest unknown in the plan and should be answered early, while implementing #17.
+`firefox-hardened`, because the bug was first observed in LibreWolf. The profile is therefore part
+of the harness from the start, not a later addition.
+
+It is worth being precise about *why* LibreWolf showed the bug, because the obvious guess is wrong.
+First-party isolation partitions cookies by top-level site, but a redirect-based OIDC flow is itself
+the top-level site at every step, so it does not cross that partition — FPI breaks third-party
+iframe and silent-renew flows, which this library does not use. #16's own analysis names the real
+mechanism: LibreWolf deletes all cookies on exit but restores open tabs, so a restored IdP or
+callback tab arrives without the `authjs.pkce.code_verifier` cookie. That is scenario D, and it is
+reproducible in any browser by deleting the cookie — which is exactly how #16 proposes to test it.
+
+So the hardened profile is expected to pass. If it does not, the finding is a real product bug
+affecting real LibreWolf users, not a harness defect — it gets its own issue, and the profile is not
+weakened to make the suite green.
 
 ### Known risk: timing in the token-refresh test
 
