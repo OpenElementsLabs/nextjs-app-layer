@@ -10,7 +10,7 @@ checked. `docs/releases/upgrade-to-0.10.md` collects all changes that ship in it
 - [x] Playwright E2E harness with fixture app and mock OIDC server (#17, PR #19)
 - [x] Interrupted or repeated OIDC login no longer ends on the Auth.js error page (#16)
 - [x] E2E coverage of the logout flow (spec `006-logout-e2e`)
-- [ ] E2E coverage of the token-refresh flow, including the refresh-failure path (issue to be created)
+- [x] E2E coverage of the token-refresh flow (spec `007-token-refresh-e2e`) — the refresh *failure* path stays a unit test; see that spec for why
 
 ### Why the release is gated on this
 

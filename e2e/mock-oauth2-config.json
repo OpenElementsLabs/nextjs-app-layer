@@ -26,6 +26,32 @@
           }
         }
       ]
+    },
+    {
+      "issuerId": "shortlived",
+      "tokenExpiry": 20,
+      "requestMappings": [
+        {
+          "requestParam": "grant_type",
+          "match": "authorization_code",
+          "claims": {
+            "sub": "e2e-user-001",
+            "name": "E2E Test User",
+            "email": "e2e@open-elements.test",
+            "roles": ["APP-ADMIN", "APP-USER", "IT-ADMIN"]
+          }
+        },
+        {
+          "requestParam": "grant_type",
+          "match": "refresh_token",
+          "claims": {
+            "sub": "e2e-user-001",
+            "name": "E2E Test User",
+            "email": "e2e@open-elements.test",
+            "roles": ["APP-ADMIN", "APP-USER", "IT-ADMIN"]
+          }
+        }
+      ]
     }
   ]
 }
