@@ -7,7 +7,7 @@ checked. `docs/releases/upgrade-to-0.10.md` collects all changes that ship in it
 
 - [x] Replace the hand-copied middleware matcher with `createAppLayerProxy` (spec `002-app-layer-proxy-api`, PR #18) — **breaking**
 - [x] Exclude `robots.txt` and `sitemap.xml` from the coarse matcher (spec `003-public-crawler-files`)
-- [ ] Playwright E2E harness with fixture app and mock OIDC server (#17)
+- [x] Playwright E2E harness with fixture app and mock OIDC server (#17, PR #19)
 - [ ] Interrupted or repeated OIDC login no longer ends on the Auth.js error page (#16)
 - [ ] E2E coverage of the logout flow (issue to be created)
 - [ ] E2E coverage of the token-refresh flow, including the refresh-failure path (issue to be created)
