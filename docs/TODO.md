@@ -146,11 +146,23 @@ alternative is to run the job in `mcr.microsoft.com/playwright:v<version>-noble`
 browsers and system libraries already and pins the browser/OS combination — a better fit for the
 reproducible-builds convention than installing packages at run time.
 
-Decide it with numbers, not preference: the first real CI run shows what the install step actually
-costs with a warm cache. If that is a few seconds, switching images is motion without benefit.
+**The numbers are in, and they favour the container.** Measured on the first two runs of the job:
 
-- Compare cold-cache and warm-cache wall-clock for the current approach against the container.
+| Step | Cold cache (run #34) | Warm cache (run #36) |
+|---|---|---|
+| Restore browser cache | 0s (miss) | 1s (hit) |
+| Install browsers | 31s | **20s** |
+| Run the E2E suite | 41s | 39s |
+| `e2e` job total | 113s | **100s** |
+
+The cache saves only ~11s. The residual 20s is `--with-deps` installing system libraries, which no
+cache can help with but which the image already contains. Together with the ~6s spent restoring and
+saving the cache, switching would take roughly 25s off a 100s job — about a quarter — and would also
+delete the cache step and the version-resolution step entirely.
+
 - The image tag must track the `@playwright/test` version, or the browsers and the client drift apart.
+  That coupling is the main cost of the change and needs a note in the release process.
+- Re-measure after switching: the image is large, so pull time partly offsets the saving.
 
 **Keep this scoped to CI.** Containerising the whole harness — running the browser *and* the fixture
 app in Docker — would be a mistake for a specific, measured reason: the mock IdP derives the `issuer`
