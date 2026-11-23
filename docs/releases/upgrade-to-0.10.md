@@ -2,7 +2,7 @@
 
 ## Prompt
 
-You are upgrading a Next.js app that depends on `@open-elements/nextjs-app-layer` from 0.9.x to 0.10.0. The release removes the exported `middlewareConfig` and replaces the hand-copied auth matcher with a `createAppLayerProxy` factory. The app's `middleware.ts` must be rewritten. Nothing else changes. Do not change anything outside this scope.
+You are upgrading a Next.js app that depends on `@open-elements/nextjs-app-layer` from 0.9.x to 0.10.0. The release removes the exported `middlewareConfig` and replaces the hand-copied auth matcher with a `createAppLayerProxy` factory. The app's `middleware.ts` must be rewritten; that is the only change the app has to make. The release also ships three fixes that need no code change: `robots.txt` and `sitemap.xml` are no longer behind the login, an interrupted login returns to `/login` instead of the Auth.js error page, and the published output contains only resolvable ESM imports. Dependencies are unchanged. Do not change anything outside this scope.
 
 If the app is still on 0.8.x, run [`upgrade-to-0.9.md`](upgrade-to-0.9.md) first.
 

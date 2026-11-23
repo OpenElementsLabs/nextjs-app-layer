@@ -11,6 +11,7 @@ checked. `docs/releases/upgrade-to-0.10.md` collects all changes that ship in it
 - [x] Interrupted or repeated OIDC login no longer ends on the Auth.js error page (#16)
 - [x] E2E coverage of the logout flow (spec `006-logout-e2e`)
 - [x] E2E coverage of the token-refresh flow (spec `007-token-refresh-e2e`) — the refresh *failure* path stays a unit test; see that spec for why
+- [x] Write resolvable relative specifiers into the published ESM (spec `008-published-esm-resolution`, #9, PR #24)
 
 ### Why the release is gated on this
 
