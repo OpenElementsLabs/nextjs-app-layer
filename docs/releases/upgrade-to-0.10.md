@@ -31,6 +31,19 @@ createAppLayerProxy(auth, { publicRoutes?: { exact?: string[]; prefix?: string[]
 
 The 0.9 matcher did not exclude them, so a crawler requesting `/robots.txt` or `/sitemap.xml` on a deployed app received the login redirect's HTML instead of the file. The new matcher excludes both. If the app worked around this — by serving them from a different path, or by adding them to its own matcher — remove that workaround.
 
+#### Fix: an interrupted login no longer dead-ends on the Auth.js error page
+
+In 0.9.x, an interrupted or repeated OIDC login landed on Auth.js' built-in `/api/auth/error`, which reads "Server error — There is a problem with the server configuration" and offers no way back. Nothing was misconfigured: the login attempt was simply no longer valid. It happens when two tabs start a login, when a callback URL is reopened (reload, back/forward, a restored tab), or when the `authjs.pkce.code_verifier` cookie is gone — which is what LibreWolf does by clearing cookies on exit while restoring tabs.
+
+0.10.0 sets `pages.error` to `/login`, so those failures land on the login page with a message saying the login expired or was interrupted and a button that retries. The login button is also disabled from the first click, so two sign-ins cannot race. The PKCE check itself is unchanged.
+
+Nothing to change in app code. Two things to check:
+
+- If the app sets its own `pages.error` or customised `/api/auth/error`, decide which behaviour you want — the library now configures `pages.error` itself.
+- If the app overrides `appLayerTranslations`, note the two new keys `login.errorExpired` and `login.errorAccessDenied`. `login.error` is still present and unchanged.
+
+Be aware of the trade: a *genuine* misconfiguration — a wrong client secret, an unreachable issuer — also produces `Configuration` and will now read as "your login expired" to users, with the real error in the server log rather than on screen. That is deliberate: the alternative leaves the far more common interrupted login with no way back.
+
 Dependencies did not change. Leave `next`, `next-auth`, `react`, `react-dom`, `lucide-react` and `@open-elements/ui` as they are.
 
 ### Steps

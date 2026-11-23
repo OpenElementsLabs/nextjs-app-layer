@@ -84,7 +84,12 @@ export function createAppLayerAuth(
         authorization: { params: { scope: "openid profile email offline_access roles" } },
       },
     ],
-    pages: { signIn: "/login" },
+    // `error: "/login"` keeps an interrupted or superseded login out of Auth.js'
+    // built-in error page, which claims a server configuration problem and offers
+    // no way back. /login already knows how to recover: it shows a message and a
+    // retry button, and redirects to the home route when a session exists — which
+    // is what turns a parallel login into "already signed in". See spec 005.
+    pages: { signIn: "/login", error: "/login" },
     session: { strategy: "jwt", maxAge: sessionMaxAge, updateAge: sessionUpdateAge },
     jwt: { maxAge: sessionMaxAge },
     callbacks: {

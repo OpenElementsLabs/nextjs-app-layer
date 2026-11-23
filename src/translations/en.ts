@@ -2,6 +2,10 @@ export const en = {
   login: {
     button: "Log in",
     error: "Login failed. Please try again.",
+    /** Shown for every auth error except AccessDenied: retrying resolves them. */
+    errorExpired: "Your login has expired or was interrupted. Please log in again.",
+    /** Shown for AccessDenied, where retrying does not help. */
+    errorAccessDenied: "Access denied.",
     developedBy: "Developed by",
   },
   nav: {

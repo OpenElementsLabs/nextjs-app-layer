@@ -180,3 +180,25 @@ failure was [playwright#42768](https://github.com/microsoft/playwright/issues/42
 `CFFIXED_USER_HOME` setting, and all three projects now pass natively.
 
 **Prerequisite:** One real run of the `e2e` job, to have the numbers.
+
+## Decide whether the OIDC provider should also run the `state` and `nonce` checks
+
+The authorize URL `createAppLayerAuth` produces carries `code_challenge` and `code_challenge_method`
+but **no `state` and no `nonce`** — measured against the running fixture app in spec 005. The
+provider configuration in `src/server/auth.ts` does not set `checks`, so whatever Auth.js defaults to
+for this provider shape is what applies, and in practice that is PKCE alone.
+
+PKCE protects the code exchange against interception and injection, which is the main threat the
+`state` check also addresses for the authorization-code flow, so this is not presented as a
+vulnerability — it is an unexamined default that nobody chose deliberately.
+
+- Establish what Auth.js actually defaults to for a manually declared `type: "oidc"` provider, and
+  whether `state`/`nonce` are off because of that declaration rather than by intent.
+- If they are enabled, re-run the spec 005 interrupted-login scenarios: `state` adds a second
+  single-use cookie, so the two-tab and restored-tab flows may fail in new ways.
+
+**Context:** Observed while implementing spec 005 (#16), which put changing the OIDC checks
+explicitly out of scope — weakening or altering a security check was exactly what that issue refused
+to do. Deferred so the decision is made on its own merits rather than inside a bug fix.
+
+**Prerequisite:** None, but spec 005's E2E scenarios are what would validate a change.
