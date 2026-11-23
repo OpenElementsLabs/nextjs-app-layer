@@ -137,3 +137,34 @@ that tests nothing about authentication. Deferred because changing the font stra
 consuming app's rendering and deserves its own decision.
 
 **Prerequisite:** None.
+
+## Decide whether the CI `e2e` job should run in the official Playwright container
+
+The `e2e` job currently installs browsers with `pnpm exec playwright install --with-deps chromium
+firefox`, backed by an `actions/cache` entry keyed on the exact `@playwright/test` version. The
+alternative is to run the job in `mcr.microsoft.com/playwright:v<version>-noble`, which ships the
+browsers and system libraries already and pins the browser/OS combination — a better fit for the
+reproducible-builds convention than installing packages at run time.
+
+Decide it with numbers, not preference: the first real CI run shows what the install step actually
+costs with a warm cache. If that is a few seconds, switching images is motion without benefit.
+
+- Compare cold-cache and warm-cache wall-clock for the current approach against the container.
+- The image tag must track the `@playwright/test` version, or the browsers and the client drift apart.
+
+**Keep this scoped to CI.** Containerising the whole harness — running the browser *and* the fixture
+app in Docker — would be a mistake for a specific, measured reason: the mock IdP derives the `issuer`
+claim from the request's Host header, so a browser inside a container reaching it as
+`host.docker.internal` and a Next.js server reaching it as `localhost` would produce two different
+issuer strings and fail token validation. Fixing that means moving the fixture app into compose too,
+which gives up Playwright's `webServer` management — including the `reuseExistingServer: false` that
+protects against testing a stale `dist/`. That trade only becomes worthwhile if the suite ever needs
+to test deployment topology (reverse proxy, HTTPS, differing hostnames), which #16, logout and token
+refresh do not.
+
+**Context:** Raised while implementing spec 004, after Playwright's Firefox failed to launch locally
+and Docker looked like a way to sidestep browser-profile problems in general. It was not needed: the
+failure was [playwright#42768](https://github.com/microsoft/playwright/issues/42768), fixed with one
+`CFFIXED_USER_HOME` setting, and all three projects now pass natively.
+
+**Prerequisite:** One real run of the `e2e` job, to have the numbers.
