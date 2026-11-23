@@ -9,12 +9,30 @@ import { expect, type BrowserContext, type Page } from "@playwright/test";
 /** The mock IdP's interactive login form; verified against image 3.0.1. */
 const IDP_USERNAME_FIELD = 'input[name="username"]';
 const IDP_SUBMIT_BUTTON = 'input[type="submit"]';
+/** Optional claims the form merges *into* those from a matching requestMapping. */
+const IDP_CLAIMS_FIELD = 'textarea[name="claims"]';
 
 /** The app's own login button, by its accessible name in either language. */
 const LOGIN_BUTTON = /log ?in|anmelden/i;
 
 /** Auth.js' PKCE cookie — the one whose absence breaks a resumed login. */
 export const PKCE_COOKIE = "authjs.pkce.code_verifier";
+
+/**
+ * Prefixes Auth.js uses for the session cookie. A session larger than the 4 KB
+ * cookie limit is split into `<prefix>.0`, `<prefix>.1`, … so matching must be by
+ * prefix, which is exactly what `createLogoutHandler` does when deleting them.
+ */
+const SESSION_COOKIE_PREFIXES = ["authjs.session-token", "__Secure-authjs.session-token"];
+
+/** Names of the session cookies currently held by the context. */
+export async function sessionCookieNames(context: BrowserContext): Promise<string[]> {
+  const cookies = await context.cookies();
+  return cookies
+    .map((cookie) => cookie.name)
+    .filter((name) => SESSION_COOKIE_PREFIXES.some((prefix) => name.startsWith(prefix)))
+    .sort();
+}
 
 /**
  * Begin a login and stop on the identity provider's form.
@@ -37,8 +55,15 @@ export async function startLoginAtIdp(page: Page): Promise<void> {
  * priority, so the session's claims come from that configuration. Verified
  * against image 3.0.1.
  */
-export async function submitIdpForm(page: Page, username = "e2e-user"): Promise<void> {
+export async function submitIdpForm(
+  page: Page,
+  username = "e2e-user",
+  extraClaims?: Record<string, unknown>,
+): Promise<void> {
   await page.fill(IDP_USERNAME_FIELD, username);
+  if (extraClaims !== undefined) {
+    await page.fill(IDP_CLAIMS_FIELD, JSON.stringify(extraClaims));
+  }
   await page.click(IDP_SUBMIT_BUTTON);
 }
 
