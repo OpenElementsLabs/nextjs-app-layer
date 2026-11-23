@@ -25,11 +25,11 @@ import {
   TablePagination,
   TooltipIconButton,
 } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../../translations/provider";
-import { useApiClient } from "../../hooks/api-client";
-import type { WebhookDto, Page } from "../../api/types";
-import type { AppLayerTranslations } from "../../translations/provider";
-import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../lib/page-size";
+import { useAppLayerTranslations } from "../../translations/provider.js";
+import { useApiClient } from "../../hooks/api-client.js";
+import type { WebhookDto, Page } from "../../api/types.js";
+import type { AppLayerTranslations } from "../../translations/provider.js";
+import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../lib/page-size.js";
 
 export const PAGE_SIZE_STORAGE_KEY = "pageSize.webhooks";
 

@@ -1,4 +1,4 @@
-import { LoginClient } from "./login-client";
+import { LoginClient } from "./login-client.js";
 
 export function createLoginPage({
   appName,

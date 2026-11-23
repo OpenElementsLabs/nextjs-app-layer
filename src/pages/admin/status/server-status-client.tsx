@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CapabilityStatus, HealthStatus } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../../../translations/provider";
+import { useAppLayerTranslations } from "../../../translations/provider.js";
 
 /** One runtime-capability row configured by the consuming app. */
 export interface StatusCapabilityItem {

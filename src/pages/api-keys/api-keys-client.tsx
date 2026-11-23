@@ -22,10 +22,10 @@ import {
   TablePagination,
   TooltipIconButton,
 } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../../translations/provider";
-import { useApiClient } from "../../hooks/api-client";
-import type { ApiKeyDto, ApiKeyCreatedDto, Page } from "../../api/types";
-import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../lib/page-size";
+import { useAppLayerTranslations } from "../../translations/provider.js";
+import { useApiClient } from "../../hooks/api-client.js";
+import type { ApiKeyDto, ApiKeyCreatedDto, Page } from "../../api/types.js";
+import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../lib/page-size.js";
 
 export const PAGE_SIZE_STORAGE_KEY = "pageSize.apiKeys";
 

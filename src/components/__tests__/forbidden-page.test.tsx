@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { cleanup, screen } from "@testing-library/react";
-import { ForbiddenPage } from "../forbidden-page";
-import { renderWithLibProviders } from "../../test/render-with-providers";
-import { appLayerTranslations } from "../../translations/provider";
+import { ForbiddenPage } from "../forbidden-page.js";
+import { renderWithLibProviders } from "../../test/render-with-providers.js";
+import { appLayerTranslations } from "../../translations/provider.js";
 
 afterEach(() => cleanup());
 

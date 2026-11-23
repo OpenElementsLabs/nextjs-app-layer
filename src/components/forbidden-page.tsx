@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../translations/provider";
+import { useAppLayerTranslations } from "../translations/provider.js";
 
 export function ForbiddenPage({ homeRoute = "/" }: { readonly homeRoute?: string } = {}) {
   const t = useAppLayerTranslations();

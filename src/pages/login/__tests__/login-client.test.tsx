@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
-import { appLayerTranslations } from "../../../translations/provider";
-import { renderWithLibProviders } from "../../../test/render-with-providers";
+import { appLayerTranslations } from "../../../translations/provider.js";
+import { renderWithLibProviders } from "../../../test/render-with-providers.js";
 
 /**
  * `useSearchParams` and `useRouter` need a Next.js router context that does not
@@ -21,7 +21,7 @@ vi.mock("next-auth/react", async (importOriginal) => ({
   signIn: mocks.signIn,
 }));
 
-const { LoginClient, errorMessageFor } = await import("../login-client");
+const { LoginClient, errorMessageFor } = await import("../login-client.js");
 
 const EN = appLayerTranslations.en.login;
 const DE = appLayerTranslations.de.login;

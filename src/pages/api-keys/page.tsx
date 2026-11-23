@@ -1,7 +1,7 @@
 import type { Session } from "next-auth";
-import { ForbiddenPage } from "../../components/forbidden-page";
-import { ROLE_IT_ADMIN } from "../../lib/roles";
-import { ApiKeysClient } from "./api-keys-client";
+import { ForbiddenPage } from "../../components/forbidden-page.js";
+import { ROLE_IT_ADMIN } from "../../lib/roles.js";
+import { ApiKeysClient } from "./api-keys-client.js";
 
 type AuthFn = () => Promise<Session | null>;
 

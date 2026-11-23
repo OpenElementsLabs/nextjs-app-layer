@@ -14,7 +14,7 @@ vi.mock("next-auth", () => ({
   },
 }));
 
-const { createAppLayerAuth } = await import("../auth");
+const { createAppLayerAuth } = await import("../auth.js");
 
 function configure(): Record<string, unknown> {
   createAppLayerAuth({

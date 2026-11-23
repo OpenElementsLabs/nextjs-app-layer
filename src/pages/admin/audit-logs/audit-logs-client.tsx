@@ -17,10 +17,10 @@ import {
   TableRow,
   TablePagination,
 } from "@open-elements/ui";
-import { useAppLayerTranslations } from "../../../translations/provider";
-import { useApiClient } from "../../../hooks/api-client";
-import type { AuditLogDto, Page, UserDto } from "../../../api/types";
-import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../../lib/page-size";
+import { useAppLayerTranslations } from "../../../translations/provider.js";
+import { useApiClient } from "../../../hooks/api-client.js";
+import type { AuditLogDto, Page, UserDto } from "../../../api/types.js";
+import { PAGE_SIZE_OPTIONS, readStoredPageSize } from "../../../lib/page-size.js";
 
 export const PAGE_SIZE_STORAGE_KEY = "pageSize.auditLogs";
 export const ALL_VALUE = "__all__";

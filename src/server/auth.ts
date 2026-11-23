@@ -10,7 +10,7 @@ import {
   isAuthorized,
   resolvePositiveNumber,
   toTokenState,
-} from "./oidc-tokens";
+} from "./oidc-tokens.js";
 
 export interface AppLayerAuthConfig {
   readonly issuer: string | undefined;

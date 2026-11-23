@@ -226,3 +226,32 @@ enough to split. Deferred because it is an inherent HTTP constraint, not a defec
 and a fix needs its own design decision.
 
 **Prerequisite:** None.
+
+## The package still cannot be imported by plain Node — because of Next.js
+
+Spec 008 fixed this library's own half of issue #9: `dist/` no longer contains relative specifiers
+Node's ESM resolver rejects. The package is still not importable under plain Node, for a reason
+outside it. Measured:
+
+| Module | Resolves under Node ESM |
+|---|---|
+| `@open-elements/ui` | yes |
+| `next/link`, `next/navigation`, `next/server` | **no** |
+| `next-auth` | **no** |
+
+`next` ships no `exports` map, and Node will not fall back to a physical `next/link.js` for a bare
+subpath. So `import("@open-elements/nextjs-app-layer")` fails on `next/link`, not on anything this
+package emits.
+
+- Nothing to do here unless a non-Next consumer appears, which would be a product decision first.
+- If Next.js ever ships an `exports` map, revisit `moduleResolution: "nodenext"`: the source is
+  already in the shape it wants, so it becomes a two-line tsconfig change plus deleting
+  `scripts/verify-esm-dist.mjs`.
+- Worth checking whether `next-auth` is fixable sooner — it is a smaller package and may simply be
+  missing the map.
+
+**Context:** Measured while implementing spec 008 (#9). The issue frames success as the package
+importing under Node, which is unreachable while these dependencies are unresolvable; recorded so
+that goal is not mistaken for something this repository can deliver.
+
+**Prerequisite:** None.

@@ -9,7 +9,7 @@ import {
   refreshAccessToken,
   resetOidcRuntimeState,
   resolvePositiveNumber,
-} from "../oidc-tokens";
+} from "../oidc-tokens.js";
 
 const ISSUER = "https://idp.example.test";
 const TOKEN_ENDPOINT = `${ISSUER}/application/o/token/`;

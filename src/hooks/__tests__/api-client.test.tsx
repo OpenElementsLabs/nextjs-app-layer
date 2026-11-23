@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
-import { ApiClientProvider, useApiClient } from "../api-client";
-import type { AppLayerApiClient } from "../../api/client";
+import { ApiClientProvider, useApiClient } from "../api-client.js";
+import type { AppLayerApiClient } from "../../api/client.js";
 
 afterEach(() => cleanup());
 

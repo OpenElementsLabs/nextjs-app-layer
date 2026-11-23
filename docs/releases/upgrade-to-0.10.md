@@ -44,6 +44,14 @@ Nothing to change in app code. Two things to check:
 
 Be aware of the trade: a *genuine* misconfiguration — a wrong client secret, an unreachable issuer — also produces `Configuration` and will now read as "your login expired" to users, with the real error in the server log rather than on screen. That is deliberate: the alternative leaves the far more common interrupted login with no way back.
 
+#### Fix: the published output no longer contains unresolvable relative imports
+
+The package is `"type": "module"`, but up to 0.9.x its compiled output carried 115 extension-less relative import specifiers, which Node's ESM resolver cannot resolve. Apps did not notice because Next.js resolves them with its own bundler resolution — either through `transpilePackages` or through its default leniency for `node_modules`. Anything using Node's resolver (a script, a Vitest run outside Vite, a future non-Next consumer) hit it immediately.
+
+Nothing to change in app code. If the app lists `@open-elements/nextjs-app-layer` in `transpilePackages` it can keep doing so; nothing here requires removing it, and removing it is not recommended as part of this upgrade.
+
+Note that the package still cannot be imported by plain Node, for a reason outside this library: `next/link`, `next/navigation`, `next/server` and `next-auth` ship no `exports` map and are not resolvable under Node's ESM resolver either. The part this package controls is now correct.
+
 Dependencies did not change. Leave `next`, `next-auth`, `react`, `react-dom`, `lucide-react` and `@open-elements/ui` as they are.
 
 ### Steps

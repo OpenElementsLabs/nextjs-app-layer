@@ -2,56 +2,56 @@
 // Server-only factories live in ./server.ts and are imported via
 // `@open-elements/nextjs-app-layer/server`.
 
-export { ROLE_APP_ADMIN, ROLE_APP_USER, ROLE_IT_ADMIN, hasRole } from "./lib/roles";
-export { ForbiddenError } from "./lib/forbidden-error";
+export { ROLE_APP_ADMIN, ROLE_APP_USER, ROLE_IT_ADMIN, hasRole } from "./lib/roles.js";
+export { ForbiddenError } from "./lib/forbidden-error.js";
 
 export {
   AppLayerTranslationProvider,
   useAppLayerTranslations,
   appLayerTranslations,
-} from "./translations/provider";
-export type { AppLayerTranslations } from "./translations/provider";
+} from "./translations/provider.js";
+export type { AppLayerTranslations } from "./translations/provider.js";
 
-export { SessionProvider } from "./components/session-provider";
-export type { SessionProviderProps } from "./components/session-provider";
-export { ForbiddenPage } from "./components/forbidden-page";
-export { BearerTokenCard } from "./components/bearer-token-card";
-export { AddCommentDialog } from "./components/add-comment-dialog";
+export { SessionProvider } from "./components/session-provider.js";
+export type { SessionProviderProps } from "./components/session-provider.js";
+export { ForbiddenPage } from "./components/forbidden-page.js";
+export { BearerTokenCard } from "./components/bearer-token-card.js";
+export { AddCommentDialog } from "./components/add-comment-dialog.js";
 
-export { ApiClientProvider, useApiClient } from "./hooks/api-client";
-export { defaultApiClient } from "./api/client";
-export type { AppLayerApiClient } from "./api/client";
+export { ApiClientProvider, useApiClient } from "./hooks/api-client.js";
+export { defaultApiClient } from "./api/client.js";
+export type { AppLayerApiClient } from "./api/client.js";
 
-export { createAuditLogsPage } from "./pages/admin/audit-logs/page";
-export { AuditLogsClient } from "./pages/admin/audit-logs/audit-logs-client";
-export { auditLogsPageMeta } from "./pages/admin/audit-logs/meta";
+export { createAuditLogsPage } from "./pages/admin/audit-logs/page.js";
+export { AuditLogsClient } from "./pages/admin/audit-logs/audit-logs-client.js";
+export { auditLogsPageMeta } from "./pages/admin/audit-logs/meta.js";
 
-export { createUsersPage } from "./pages/admin/users/page";
-export { UsersClient } from "./pages/admin/users/users-client";
-export { usersPageMeta } from "./pages/admin/users/meta";
+export { createUsersPage } from "./pages/admin/users/page.js";
+export { UsersClient } from "./pages/admin/users/users-client.js";
+export { usersPageMeta } from "./pages/admin/users/meta.js";
 
-export { createServerStatusPage } from "./pages/admin/status/page";
-export { ServerStatusClient } from "./pages/admin/status/server-status-client";
+export { createServerStatusPage } from "./pages/admin/status/page.js";
+export { ServerStatusClient } from "./pages/admin/status/server-status-client.js";
 export type {
   StatusCapabilitiesConfig,
   StatusCapabilityItem,
-} from "./pages/admin/status/server-status-client";
-export { serverStatusPageMeta } from "./pages/admin/status/meta";
+} from "./pages/admin/status/server-status-client.js";
+export { serverStatusPageMeta } from "./pages/admin/status/meta.js";
 
-export { createBearerTokenPage } from "./pages/admin/token/page";
-export { BearerTokenClient } from "./pages/admin/token/bearer-token-client";
-export { bearerTokenPageMeta } from "./pages/admin/token/meta";
+export { createBearerTokenPage } from "./pages/admin/token/page.js";
+export { BearerTokenClient } from "./pages/admin/token/bearer-token-client.js";
+export { bearerTokenPageMeta } from "./pages/admin/token/meta.js";
 
-export { createApiKeysPage } from "./pages/api-keys/page";
-export { ApiKeysClient } from "./pages/api-keys/api-keys-client";
-export { apiKeysPageMeta } from "./pages/api-keys/meta";
+export { createApiKeysPage } from "./pages/api-keys/page.js";
+export { ApiKeysClient } from "./pages/api-keys/api-keys-client.js";
+export { apiKeysPageMeta } from "./pages/api-keys/meta.js";
 
-export { createWebhooksPage } from "./pages/webhooks/page";
-export { WebhooksClient } from "./pages/webhooks/webhooks-client";
-export { webhooksPageMeta } from "./pages/webhooks/meta";
+export { createWebhooksPage } from "./pages/webhooks/page.js";
+export { WebhooksClient } from "./pages/webhooks/webhooks-client.js";
+export { webhooksPageMeta } from "./pages/webhooks/meta.js";
 
-export { createLoginPage } from "./pages/login/page";
-export { LoginClient } from "./pages/login/login-client";
+export { createLoginPage } from "./pages/login/page.js";
+export { LoginClient } from "./pages/login/login-client.js";
 
 // OERootLayout is exposed at "@open-elements/nextjs-app-layer/layout" so the
 // `next/font/google` runtime call (compile-time in Next.js, but a real call
@@ -70,4 +70,4 @@ export type {
   WebhookUpdateDto,
   TranslationConfigDto,
   PageRequest,
-} from "./api/types";
+} from "./api/types.js";

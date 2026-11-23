@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import * as proxyModule from "../proxy";
+import * as proxyModule from "../proxy.js";
 
 /**
  * Guards the public server surface after spec 002 removed `middlewareConfig`.

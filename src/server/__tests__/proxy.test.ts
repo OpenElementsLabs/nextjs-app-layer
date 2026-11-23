@@ -7,7 +7,7 @@ import {
   handleProxyRequest,
   isPublicRoute,
   resolvePublicRoutes,
-} from "../proxy";
+} from "../proxy.js";
 
 const ORIGIN = "http://localhost:3000";
 
