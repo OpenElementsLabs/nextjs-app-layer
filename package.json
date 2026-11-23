@@ -44,7 +44,7 @@
     "dev": "tsc -p tsconfig.build.json --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "pnpm run build && playwright test",
+    "e2e": "pnpm run build && pnpm --filter ./e2e/fixture-app exec next build && playwright test",
     "e2e:up": "docker compose -f e2e/docker-compose.yml up -d --wait",
     "e2e:down": "docker compose -f e2e/docker-compose.yml down",
     "lint": "eslint src/ e2e/ playwright.config.ts",

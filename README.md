@@ -386,7 +386,15 @@ Two ports are published, both overridable so several OE stacks can run at once:
 | | Default | Override |
 |---|---|---|
 | Fixture app | `3300` | `E2E_PORT` |
+| Fixture app, short-lived tokens | `3301` | `E2E_REFRESH_PORT` |
 | Mock OIDC server | `8300` | `MOCK_OAUTH2_PORT` |
+
+The second app instance exists for the token-refresh suite. It is pointed at the
+mock server's `shortlived` issuer, which mints 20-second tokens, so the refresh
+window can be observed without giving the rest of the suite 20-second sessions.
+It runs as its own Playwright project, `refresh`, in one browser — the refresh
+happens in the Next.js server, so browser variation would add runtime without
+coverage.
 
 The issuer URL must be identical for the browser and the Next.js server. The
 mock server derives the `issuer` claim from the request's Host header, so
