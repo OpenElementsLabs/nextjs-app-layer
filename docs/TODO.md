@@ -202,3 +202,27 @@ explicitly out of scope — weakening or altering a security check was exactly w
 to do. Deferred so the decision is made on its own merits rather than inside a bug fix.
 
 **Prerequisite:** None, but spec 005's E2E scenarios are what would validate a change.
+
+## A session too large for the HTTP header limit fails the login silently
+
+Measured in spec 006: with roughly 6 KB of extra claims the session splits into seven cookies
+totalling about 24 KB, the request carrying them exceeds the HTTP header limit, and the session
+cannot be read. The OIDC callback itself succeeds and sets the cookies — it is the *next* request
+that fails, so the user is simply returned to `/login` with **no `error` parameter and therefore no
+message**. Clicking "Log in" again repeats it forever.
+
+This is the dead end #16 was about, reached by a different route, and spec 005 does not catch it:
+there is no auth error to route anywhere.
+
+- Establish the real ceiling (it depends on the Node/Next header limit, which is configurable).
+- Decide where a guard belongs. Detecting an unreadably large session in the proxy and showing the
+  "expired or interrupted" message would at least name the problem; refusing to issue such a session
+  at the callback would be more honest but is a behavioural change.
+- 24 KB of claims is far beyond anything an OE app issues today, so this is a latent trap rather than
+  a live bug — an app with very many roles or a verbose IdP could reach it.
+
+**Context:** Found while calibrating spec 006's chunked-cookie scenario, which needed a session large
+enough to split. Deferred because it is an inherent HTTP constraint, not a defect in this library,
+and a fix needs its own design decision.
+
+**Prerequisite:** None.

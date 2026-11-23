@@ -18,6 +18,11 @@ export default async function Home() {
       <p data-testid="user-name">{session?.user?.name ?? ""}</p>
       <p data-testid="user-email">{session?.user?.email ?? ""}</p>
       <p data-testid="user-roles">{(session?.roles ?? []).join(",")}</p>
+
+      {/* A plain link, the way the library's own RefreshTokenErrorWatcher navigates. */}
+      <a data-testid="logout" href="/api/logout">
+        Log out
+      </a>
     </main>
   );
 }
