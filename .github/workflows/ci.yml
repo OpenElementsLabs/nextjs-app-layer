@@ -48,3 +48,73 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+  # Runs alongside `verify`, not after it: a type or lint error should be
+  # reported without first waiting for a browser run.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Built in its own step so a library build failure is attributed to the
+      # library rather than appearing inside the Playwright run. `pnpm e2e`
+      # rebuilds it, which is the accepted price of never testing a stale `dist/`.
+      - name: Build the library
+        run: pnpm run build
+
+      - name: Start the mock identity provider
+        run: docker compose -f e2e/docker-compose.yml up -d --wait
+
+      # Keyed on the exact Playwright version: the browser build is tied to it,
+      # and without the cache every run downloads two browsers.
+      - name: Resolve the Playwright version
+        id: playwright
+        run: |
+          VERSION="$(node -p "require('./package.json').devDependencies['@playwright/test']")"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Always run: on a cache hit the browsers are already present and only the
+      # system libraries are installed, which are not cached.
+      - name: Install browsers
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Run the E2E suite
+        run: pnpm e2e
+
+      - name: Collect the identity provider logs
+        if: failure()
+        run: docker compose -f e2e/docker-compose.yml logs --no-color > idp-logs.txt
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Upload the identity provider logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: idp-logs
+          path: idp-logs.txt
+          retention-days: 7

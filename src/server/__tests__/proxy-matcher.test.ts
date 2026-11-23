@@ -15,9 +15,11 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
  * same silent way. So the string is documentation — and this suite is what keeps
  * the documented string honest.
  *
- * The copies in the README and the upgrade guide are the ones consumers actually
- * paste, so they are asserted against this one below rather than merely kept in
- * sync by hand.
+ * The copies in the README, the upgrade guide and the E2E fixture app are
+ * asserted against this one below rather than merely kept in sync by hand. The
+ * fixture app's copy matters most: it is the only one that actually executes, so
+ * a drift there would mean the E2E suite exercises a matcher no consumer is told
+ * to use.
  */
 const config = {
   matcher: [
@@ -29,8 +31,15 @@ function matches(url: string): boolean {
   return unstable_doesMiddlewareMatch({ config, url });
 }
 
-/** Documents that publish the matcher for consumers to copy. */
-const DOCUMENTED_IN = ["README.md", "docs/releases/upgrade-to-0.10.md"];
+/**
+ * Every file carrying a copy of the matcher: the two documents consumers paste
+ * from, and the fixture app, whose copy is the one the E2E suite executes.
+ */
+const DOCUMENTED_IN = [
+  "README.md",
+  "docs/releases/upgrade-to-0.10.md",
+  "e2e/fixture-app/src/middleware.ts",
+];
 
 /** Any double-quoted string that opens like a negative-lookahead matcher. */
 const QUOTED_MATCHER = /"\/\(\(\?![^"]*"/g;

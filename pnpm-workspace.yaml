@@ -1,3 +1,10 @@
+# The library is the root package. `e2e/fixture-app` is a private workspace
+# member: a minimal Next.js app that consumes the library from this repo's build
+# so the E2E suite exercises the code in the PR, never a published version.
+# It is `private: true` and outside the `files` allowlist, so it is never published.
+packages:
+  - e2e/fixture-app
+
 onlyBuiltDependencies:
   - esbuild
   - sharp
