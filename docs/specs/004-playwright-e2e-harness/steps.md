@@ -100,8 +100,8 @@ Three points the design left open or did not foresee, settled here:
 - [x] Assert the redirect carries `callbackUrl=%2F`, as spec 002's proxy produces
 
 **Acceptance criteria:**
-- [x] `pnpm e2e:up && pnpm e2e` passes in `chromium` — 4/4, 11.2s
-- [ ] The same in `firefox` and `firefox-hardened` — **not verified locally.** Playwright's Firefox 159 build cannot launch headless on this machine (macOS 27, arm64): it reports "Could not find profile folder" for any profile path, including one outside `$TMPDIR`, while `firefox -version` works. A forced reinstall did not help. Note that the plain `firefox` project fails identically, so the hardened prefs are *not* the cause. Must be confirmed on CI's `ubuntu-latest`.
+- [x] `pnpm e2e:up && pnpm e2e` passes locally in `chromium`, `firefox` **and** `firefox-hardened` — 12/12 in 14.8s
+- [x] Firefox needed `CFFIXED_USER_HOME` on macOS: macOS 27 TCC-protects `~/Library/Application Support/Firefox`, which the bundled Firefox reads before the `-profile` directory, so every launch failed with "Could not find profile folder" (microsoft/playwright#42768). Scoped to `darwin`; Linux CI is unaffected.
 - [x] No fixed sleeps — every wait is on an observable condition
 - [x] If `firefox-hardened` fails, the profile is **not** weakened; the failure is reported as a product finding and gets its own issue
 

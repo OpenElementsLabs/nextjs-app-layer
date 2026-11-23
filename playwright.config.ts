@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -47,6 +50,29 @@ const authEnv = {
  * finding about real users, and the prefs are not to be loosened to make the
  * suite green.
  */
+/**
+ * Firefox on macOS needs a home directory of its own.
+ *
+ * macOS 27 protects `~/Library/Application Support/Firefox` through TCC, and the
+ * bundled Firefox reads `profiles.ini` from there *before* opening the
+ * `-profile` directory Playwright hands it — so every launch dies with
+ * "Could not find profile folder", even though the binary itself runs fine.
+ * See microsoft/playwright#42768. `CFFIXED_USER_HOME` points it at an empty
+ * directory instead, so it never touches the protected path.
+ *
+ * Deliberately scoped to macOS: CI runs on Linux, where the protected path does
+ * not exist and the default environment is correct.
+ */
+const firefoxLaunchEnv: Record<string, string> | undefined =
+  process.platform === "darwin"
+    ? {
+        ...(Object.fromEntries(
+          Object.entries(process.env).filter(([, value]) => typeof value === "string"),
+        ) as Record<string, string>),
+        CFFIXED_USER_HOME: mkdtempSync(join(tmpdir(), "pw-firefox-home-")),
+      }
+    : undefined;
+
 const hardenedFirefoxPrefs: Record<string, boolean | number> = {
   "privacy.resistFingerprinting": true,
   "privacy.trackingprotection.enabled": true,
@@ -72,12 +98,15 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], launchOptions: { env: firefoxLaunchEnv } },
+    },
     {
       name: "firefox-hardened",
       use: {
         ...devices["Desktop Firefox"],
-        launchOptions: { firefoxUserPrefs: hardenedFirefoxPrefs },
+        launchOptions: { env: firefoxLaunchEnv, firefoxUserPrefs: hardenedFirefoxPrefs },
       },
     },
   ],

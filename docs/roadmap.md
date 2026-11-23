@@ -45,9 +45,17 @@ mechanism: LibreWolf deletes all cookies on exit but restores open tabs, so a re
 callback tab arrives without the `authjs.pkce.code_verifier` cookie. That is scenario D, and it is
 reproducible in any browser by deleting the cookie — which is exactly how #16 proposes to test it.
 
-So the hardened profile is expected to pass. If it does not, the finding is a real product bug
-affecting real LibreWolf users, not a harness defect — it gets its own issue, and the profile is not
-weakened to make the suite green.
+**Measured, as of spec 004:** the hardened profile passes. All three projects run the login smoke
+tests green (12/12), so first-party isolation demonstrably does not break the redirect-based flow.
+The remaining LibreWolf exposure is scenario D — the deleted PKCE cookie — which #16 reproduces by
+deleting the cookie rather than by hardening the browser. If a future scenario does fail under the
+profile, the finding is a real product bug affecting real users, not a harness defect: it gets its
+own issue, and the prefs are not weakened to make the suite green.
+
+One operational note for anyone running the suite on macOS: Playwright's Firefox needs
+`CFFIXED_USER_HOME` pointed at an empty directory, because macOS 27 TCC-protects
+`~/Library/Application Support/Firefox`, which the bundled Firefox reads before the profile
+Playwright passes (microsoft/playwright#42768). `playwright.config.ts` handles this for `darwin`.
 
 ### Known risk: timing in the token-refresh test
 

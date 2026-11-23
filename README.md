@@ -375,6 +375,12 @@ a LibreWolf-like profile with fingerprinting resistance and first-party
 isolation. If the hardened profile ever fails, that is a finding about real
 users; do not loosen the prefs to make the suite green.
 
+On macOS, `playwright.config.ts` gives Firefox its own home directory via
+`CFFIXED_USER_HOME`. macOS 27 protects `~/Library/Application Support/Firefox`,
+and the bundled Firefox reads `profiles.ini` from there before the profile
+Playwright passes, so without it every launch fails with "Could not find profile
+folder" ([playwright#42768](https://github.com/microsoft/playwright/issues/42768)).
+
 Two ports are published, both overridable so several OE stacks can run at once:
 
 | | Default | Override |
